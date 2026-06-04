@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>スポットクーラー・ビニールダクト シミュレータ v23（オリオン機械 クールストライカー AP150A 仕様）</title>
+<title>スポットクーラー・ビニールダクト シミュレータ v24（オリオン機械 クールストライカー AP150A 仕様）</title>
 <style>
 :root{
   --color-text-primary:#1a1a18;--color-text-secondary:#6b6b66;
@@ -107,7 +107,7 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
 </head>
 <body>
 <div class="sw">
-<h1>スポットクーラー・ビニールダクト シミュレータ v23（オリオン機械 クールストライカー AP150A 仕様）</h1>
+<h1>スポットクーラー・ビニールダクト シミュレータ v24（オリオン機械 クールストライカー AP150A 仕様）</h1>
 
 <div id="warn-cond" class="warn">⚠ 一部の穴で結露が発生しています。設定温度を上げるか風量を上げてください。</div>
 <div id="warn-di"   class="warn">⚠ 吹出し空気の不快指数が75以上です。</div>
@@ -124,7 +124,7 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
 <div class="recbox" id="recbox">推奨設定温度：—</div>
 
 <div class="theory-box">
-  <b>計算モデル（v23）：リモコン設定温度制御＋飽和制限＋開口バランス</b>　
+  <b>計算モデル（v24）：リモコン設定温度制御＋飽和制限＋開口バランス</b>　
   リモコン設定温度（20〜35℃）で冷却能力を自動調整。<b>ファンP-Q特性とダクト抵抗の交点（動作点）で実風量を決定</b>し、穴が少ないと背圧上昇でファン風量が低下する実機挙動を再現。供給空気は露点以下に下がらず超過分は除湿に消費。
 </div>
 
@@ -186,7 +186,7 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
 
 <div class="panel" style="padding:1rem;">
   <div class="cv-wrap">
-    <canvas id="cv" height="240"></canvas>
+    <canvas id="cv" height="360"></canvas>
     <div id="tooltip"></div>
   </div>
   <div style="display:flex;gap:16px;margin-top:8px;align-items:center;flex-wrap:wrap;">
@@ -664,8 +664,8 @@ function buildHotspots(dpr){
   const DH1=dHpx(s.dd1,dpr),DH2=dHpx(s.dd2,dpr);
   const y1=cv.height*0.28,y2=cv.height*0.60;
   const maxV1=Math.max.apply(null,s.res1.map(r=>r.vel).concat([0.001])),maxV2=Math.max.apply(null,s.res2.map(r=>r.vel).concat([0.001]));
-  s.res1.forEach((r,i)=>{const hx=mL+dW*0.05+(s.pos1[i]/glMax)*dW*0.88;const bH=Math.max(2,(r.vel/maxV1)*44)*dpr;hotspots.push({x:hx,yTop:y1+DH1/2,yBot:y1+DH1/2+bH+30*dpr,r,idx:i,duct:1,jv:jetVel(r.vel,s.hd1,s.jDist,s.K,s.safety),pos:s.pos1[i]});});
-  s.res2.forEach((r,i)=>{const hx=mL+dW*0.05+(s.pos2[i]/glMax)*dW*0.88;const bH=Math.max(2,(r.vel/maxV2)*44)*dpr;hotspots.push({x:hx,yTop:y2+DH2/2,yBot:y2+DH2/2+bH+30*dpr,r,idx:i,duct:2,jv:jetVel(r.vel,s.hd2,s.jDist,s.K,s.safety),pos:s.pos2[i]});});
+  s.res1.forEach((r,i)=>{const hx=mL+dW*0.05+(s.pos1[i]/glMax)*dW*0.88;const bH=Math.max(2,(r.vel/maxV1)*40)*dpr;hotspots.push({x:hx,yTop:y1+DH1/2,yBot:y1+DH1/2+bH+30*dpr,r,idx:i,duct:1,jv:jetVel(r.vel,s.hd1,s.jDist,s.K,s.safety),pos:s.pos1[i]});});
+  s.res2.forEach((r,i)=>{const hx=mL+dW*0.05+(s.pos2[i]/glMax)*dW*0.88;const bH=Math.max(2,(r.vel/maxV2)*40)*dpr;hotspots.push({x:hx,yTop:y2+DH2/2,yBot:y2+DH2/2+bH+30*dpr,r,idx:i,duct:2,jv:jetVel(r.vel,s.hd2,s.jDist,s.K,s.safety),pos:s.pos2[i]});});
 }
 function findHole(mx,my){let best=null,bd=Infinity;hotspots.forEach(h=>{const dx=Math.abs(mx-h.x);if(dx<20&&my>=h.yTop-4&&my<=h.yBot&&dx<bd){bd=dx;best=h;}});return best;}
 
@@ -733,7 +733,7 @@ cv.addEventListener('touchmove',e=>{
 cv.addEventListener('touchend',()=>{setTimeout(()=>{tooltip.style.display='none';},1800);});
 
 function animate(){
-  const W=cv.offsetWidth*(window.devicePixelRatio||1),H=240*(window.devicePixelRatio||1);
+  const W=cv.offsetWidth*(window.devicePixelRatio||1),H=360*(window.devicePixelRatio||1);
   if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}
   const w=cv.width,h=cv.height,dpr=window.devicePixelRatio||1;
   ctx.clearRect(0,0,w,h);
@@ -745,46 +745,67 @@ function animate(){
   if(!s.res1||!s.res1.length){animId=requestAnimationFrame(animate);return;}
   const glMax=Math.max(s.len1,s.len2,0.1);
   const DH1=dHpx(s.dd1,dpr),DH2=dHpx(s.dd2,dpr);
-  const y1=h*0.28,y2=h*0.60,measY=h*0.87;
+  // 縦レイアウト（各段に専用の測定ラインを配置）
+  const y1=h*0.16, y2=h*0.55;          // ダクト中心
+  const measY1=h*0.40, measY2=h*0.79;  // 各段の測定ライン
   const Tmin=s.Tmin,Tmax=s.Tmax;
 
-  ctx.strokeStyle=dark?'#444':'#ccc';ctx.lineWidth=.7*dpr;ctx.setLineDash([3*dpr,3*dpr]);
-  ctx.beginPath();ctx.moveTo(mL,h*0.94);ctx.lineTo(w-mR,h*0.94);ctx.stroke();ctx.setLineDash([]);
-  ctx.fillStyle=tc;ctx.font=(8.5*dpr)+'px sans-serif';ctx.textAlign='left';ctx.fillText('地面 0m',mL,h*0.94-2*dpr);
+  // 地面ライン（各段の測定ライン直下に描画）
+  const groundY1=h*0.47, groundY2=h*0.96;
+  function drawGround(gy){
+    ctx.strokeStyle=dark?'#444':'#ccc';ctx.lineWidth=.7*dpr;ctx.setLineDash([3*dpr,3*dpr]);
+    ctx.beginPath();ctx.moveTo(mL,gy);ctx.lineTo(w-mR,gy);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=tc;ctx.font=(8.5*dpr)+'px sans-serif';ctx.textAlign='left';ctx.fillText('地面 0m',mL,gy-2*dpr);
+  }
+  drawGround(groundY1);
+  drawGround(groundY2);
 
-  ctx.strokeStyle='#639922';ctx.lineWidth=1.2*dpr;ctx.setLineDash([5*dpr,3*dpr]);
-  ctx.beginPath();ctx.moveTo(mL,measY);ctx.lineTo(w-mR,measY);ctx.stroke();ctx.setLineDash([]);
-  ctx.fillStyle='#3B6D11';ctx.font='bold '+(8.5*dpr)+'px sans-serif';ctx.textAlign='right';ctx.fillText('測定 '+g('meas-h').toFixed(1)+'m',w-mR-2*dpr,measY-3*dpr);
+  // 各段の測定高さライン（D1・D2それぞれ）
+  function drawMeasLine(my,labelColor){
+    ctx.strokeStyle='#639922';ctx.lineWidth=1.2*dpr;ctx.setLineDash([5*dpr,3*dpr]);
+    ctx.beginPath();ctx.moveTo(mL,my);ctx.lineTo(w-mR,my);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=labelColor;ctx.font='bold '+(8.5*dpr)+'px sans-serif';ctx.textAlign='right';
+    ctx.fillText('測定 '+g('meas-h').toFixed(1)+'m',w-mR-2*dpr,my-3*dpr);
+  }
+  drawMeasLine(measY1,'#3B6D11');
+  drawMeasLine(measY2,'#3B6D11');
 
-  function drawD(yc,res,posArr,color,lbl,hd,DH){
+  function drawD(yc,measY,res,posArr,color,lbl,hd,DH,len){
     ctx.fillStyle=color+'33';ctx.beginPath();ctx.roundRect(mL,yc-DH/2,dW,DH,3*dpr);ctx.fill();
     ctx.strokeStyle=color;ctx.lineWidth=.8*dpr;ctx.stroke();
     ctx.fillStyle=tc;ctx.font=(10*dpr)+'px sans-serif';ctx.textAlign='right';ctx.fillText(lbl,mL-4*dpr,yc+3*dpr);
-    ctx.fillStyle=color;ctx.font=(8*dpr)+'px sans-serif';ctx.textAlign='left';ctx.fillText('φ'+(lbl==='D1'?g('d1-dd'):g('d2-dd'))+'mm',mL+4*dpr,yc-DH/2-3*dpr);
+    ctx.fillStyle=color;ctx.font=(8*dpr)+'px sans-serif';ctx.textAlign='left';ctx.fillText('φ'+(lbl==='D1'?g('d1-dd'):g('d2-dd'))+'mm　中心高さ '+g('duct-h').toFixed(1)+'m　全長 '+len.toFixed(1)+'m（本体〜最遠穴までの距離）',mL+4*dpr,yc-DH/2-3*dpr);
     if(!res.length)return;
     const N=res.length,maxV=Math.max.apply(null,res.map(r=>r.vel).concat([0.001]));
     res.forEach((r,i)=>{
       const hx=mL+dW*0.05+(posArr[i]/glMax)*dW*0.88;
       const isFar=(i===N-1&&N>1),isNear=(i===0&&N>1);
-      const bH=Math.max(2,(r.vel/maxV)*44)*dpr;
+      const bH=Math.max(2,(r.vel/maxV)*40)*dpr;
       const barC=tRGB(r.T,Tmin,Tmax),isCond=r.rh>=99.5;
       ctx.strokeStyle=isCond?'#9b8de8':barC;ctx.lineWidth=Math.max(1.5,hd*1000*dpr/9);
       ctx.globalAlpha=.65;ctx.beginPath();ctx.moveTo(hx,yc+DH/2);ctx.lineTo(hx,yc+DH/2+bH);ctx.stroke();ctx.globalAlpha=1;
       const jv=jetVel(r.vel,hd,s.jDist,s.K,s.safety);
+      // 測定点ドット（この段の測定ライン上）
       ctx.fillStyle=jv>=1.5?'#639922':jv>=0.5?'#BA7517':'#993C1D';
       ctx.beginPath();ctx.arc(hx,measY,3*dpr,0,Math.PI*2);ctx.fill();
       if(isFar||isNear||N===1){
-        const lx=isNear?Math.max(hx,mL+28*dpr):Math.min(hx,w-mR-28*dpr);
+        const lx=isNear?Math.max(hx,mL+30*dpr):Math.min(hx,w-mR-30*dpr);
+        // 穴の吹出し風速・温湿度（バー直下）
         ctx.fillStyle=isFar?'#185FA5':'#993556';ctx.font='bold '+(9*dpr)+'px sans-serif';ctx.textAlign='center';
         ctx.fillText(r.vel.toFixed(2)+' m/s',lx,yc+DH/2+bH+13*dpr);
         ctx.fillStyle=tRGB(r.T,Tmin,Tmax);ctx.font=(8*dpr)+'px sans-serif';
         ctx.fillText(r.T.toFixed(1)+'°C / '+r.rh.toFixed(0)+'%',lx,yc+DH/2+bH+23*dpr);
-        ctx.fillStyle=jv>=1.5?'#3B6D11':'#854F0B';ctx.fillText('→'+jv.toFixed(2)+' m/s',lx,measY+12*dpr);
+        // 測定点への到達風速（測定ライン直下）
+        ctx.fillStyle=jv>=1.5?'#3B6D11':'#854F0B';ctx.font='bold '+(8.5*dpr)+'px sans-serif';
+        ctx.fillText('→'+jv.toFixed(2)+' m/s',lx,measY+13*dpr);
+        // 最近穴/最遠穴の注記
+        ctx.fillStyle=isFar?'#185FA5':'#993556';ctx.font=(7.5*dpr)+'px sans-serif';
+        ctx.fillText(isFar?'最遠穴':'最近穴',lx,measY+23*dpr);
       }
     });
   }
-  drawD(y1,s.res1,s.pos1,'#378ADD','D1',s.hd1,DH1);
-  drawD(y2,s.res2,s.pos2,'#1D9E75','D2',s.hd2,DH2);
+  drawD(y1,measY1,s.res1,s.pos1,'#378ADD','D1',s.hd1,DH1,s.len1);
+  drawD(y2,measY2,s.res2,s.pos2,'#1D9E75','D2',s.hd2,DH2,s.len2);
   buildHotspots(dpr);
 
   const bT=y1-DH1/2-12*dpr,bB=y2+DH2/2+12*dpr;
@@ -799,8 +820,8 @@ function animate(){
   ctx.textAlign='right';ctx.fillText(glMax.toFixed(1)+'m',mL+dW*.05+dW*.88,h-2*dpr);
   ctx.strokeStyle=tc+'55';ctx.lineWidth=.5*dpr;ctx.beginPath();ctx.moveTo(mL+dW*.05,h-9*dpr);ctx.lineTo(mL+dW*.05+dW*.88,h-9*dpr);ctx.stroke();
 
-  const parts=pp1.map(p=>({p:p,yc:y1,res:s.res1,pos:s.pos1,DH:DH1,hd:s.hd1})).concat(
-              pp2.map(p=>({p:p,yc:y2,res:s.res2,pos:s.pos2,DH:DH2,hd:s.hd2})));
+  const parts=pp1.map(p=>({p:p,yc:y1,my:measY1,res:s.res1,pos:s.pos1,DH:DH1,hd:s.hd1})).concat(
+              pp2.map(p=>({p:p,yc:y2,my:measY2,res:s.res2,pos:s.pos2,DH:DH2,hd:s.hd2})));
   parts.forEach(o=>{
     const pp=o.p;
     if(!o.res.length)return;
@@ -809,7 +830,7 @@ function animate(){
     pp.life+=0.009*(0.4+vf*0.7);
     if(pp.life>1){pp.life=0;pp.idx=Math.floor(Math.random()*o.res.length);}
     const hx=mL+dW*0.05+(o.pos[pp.idx]/glMax)*dW*0.88;
-    const maxPY=Math.min(o.yc+o.DH/2+50*dpr,measY-2*dpr);
+    const maxPY=Math.min(o.yc+o.DH/2+50*dpr,o.my-2*dpr);
     const py=o.yc+o.DH/2+pp.life*(maxPY-(o.yc+o.DH/2))*(0.5+vf*0.5);
     const spread=(o.hd*500+s.jDist*10)*pp.life*dpr;
     ctx.globalAlpha=(1-pp.life)*0.5*vf;ctx.fillStyle=tRGB(rv.T,Tmin,Tmax);
