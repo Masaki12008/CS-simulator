@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>スポットクーラー・ビニールダクト シミュレータ v18（ダイキン AP150A 仕様）</title>
+<title>スポットクーラー・ビニールダクト シミュレータ v19（ダイキン AP150A 仕様）</title>
 <style>
 :root{
   --color-text-primary:#1a1a18;--color-text-secondary:#6b6b66;
@@ -96,7 +96,7 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
 </head>
 <body>
 <div class="sw">
-<h1>スポットクーラー・ビニールダクト シミュレータ v18（ダイキン AP150A 仕様）</h1>
+<h1>スポットクーラー・ビニールダクト シミュレータ v19（ダイキン AP150A 仕様）</h1>
 
 <div id="warn-cond" class="warn">⚠ 一部の穴で結露が発生しています。設定温度を上げるか風量を上げてください。</div>
 <div id="warn-di"   class="warn">⚠ 吹出し空気の不快指数が75以上です。</div>
@@ -118,6 +118,8 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
 <div id="balbox" class="balbox ok">開口バランス：—</div>
 
 <div class="recbox" id="drainbox" style="background:var(--color-background-secondary);border-color:var(--color-border-tertiary);color:var(--color-text-secondary);">ドレン水量：—</div>
+
+<div class="recbox" id="costbox" style="background:var(--color-background-secondary);border-color:var(--color-border-tertiary);color:var(--color-text-secondary);">電気代：—</div>
 
 <div class="info-bar">
   <span>D1総延長：<b id="ib-l1">—</b></span>
@@ -161,6 +163,12 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
   <div class="met"><div class="ml">除湿率（潜熱割合）</div><div class="mv c-tl" id="m-drain-ratio">—</div><div class="mu">%</div></div>
   <div class="met"><div class="ml">ドレン排水 目安管径</div><div class="mv c-am" id="m-drain-pipe">—</div><div class="mu">—</div></div>
 </div>
+<div class="g4" style="margin-bottom:10px;">
+  <div class="met"><div class="ml">推定消費電力</div><div class="mv c-am" id="m-power">—</div><div class="mu">kW</div></div>
+  <div class="met"><div class="ml">電気代（1時間）</div><div class="mv c-co" id="m-cost-h">—</div><div class="mu">円/h</div></div>
+  <div class="met"><div class="ml">電気代（24時間）</div><div class="mv c-co" id="m-cost-d">—</div><div class="mu">円/日</div></div>
+  <div class="met"><div class="ml">電気代（30日連続）</div><div class="mv c-co" id="m-cost-m">—</div><div class="mu">円/月</div></div>
+</div>
 
 <div class="panel" style="padding:1rem;">
   <div class="cv-wrap">
@@ -192,6 +200,7 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
     <div class="ctrl"><label>運転モード（合計風量）</label>
       <select id="mode"><option value="150" selected>高速 150 ㎥/min</option><option value="120">中速 120 ㎥/min</option><option value="80">低速 80 ㎥/min</option></select>
       <label style="margin-top:6px;">顕熱比 SHF（ダイキン標準0.72）</label><div class="cr"><input type="range" id="shf" min="0.55" max="0.85" value="0.72" step="0.01"><span id="vshf">0.72</span></div>
+      <label style="margin-top:6px;">電気料金単価（円/kWh）</label><div class="cr"><input type="range" id="rate" min="15" max="50" value="31" step="1"><span id="vrate">31 円</span></div>
     </div>
   </div>
   <div class="g2">
@@ -258,6 +267,7 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
 const CHM_D=0.05,RHO=1.2,CP=1006;
 const CHM_A=Math.PI*(CHM_D/2)**2;
 const COOL_MAX=25;
+const POWER_RATED=8.32; // AP150A 冷房定格消費電力 kW
 
 function satP(T){return 6.1078*Math.exp(17.269*T/(T+237.3));}
 function dewPt(T,rh){const ea=satP(T)*Math.max(0.5,rh)/100;return 237.3*Math.log(ea/6.1078)/(17.269-Math.log(ea/6.1078));}
@@ -340,7 +350,7 @@ function calcDuct(Q0min,nH,hd,off,pit,dd){
 }
 
 const SL=[
-  ['amb','vamb','°C'],['rh','vrh',' %'],['shf','vshf','',v=>(+v).toFixed(2)],
+  ['amb','vamb','°C'],['rh','vrh',' %'],['shf','vshf','',v=>(+v).toFixed(2)],['rate','vrate',' 円'],
   ['duct-h','vdh',' m'],['meas-h','vmh',' m'],
   ['jet-k','vjk','',v=>(+v).toFixed(1)],['safety','vsafe','',v=>(+v).toFixed(2)],
   ['d1-dd','vd1dd',' mm'],['d1-off','vd1off',' m'],['d1-n','vd1n',' 個'],['d1-d','vd1d',' mm'],['d1-p','vd1p',' mm'],
@@ -448,6 +458,21 @@ function calc(){
     let capNote=sup.capped?'（冷却能力が定格25kWに達しており、設定温度'+setTemp+'℃まで完全には下がりません）':'';
     recEl.innerHTML='✓ <b>結露なし：</b>設定温度 '+setTemp+'℃ で供給空気 '+sup.T.toFixed(1)+'℃・RH'+sup.rh.toFixed(0)+'%、結露の心配はありません。'+capNote;
   }
+
+  // --- 推定消費電力・電気代 ---
+  // 実効冷却能力に比例して消費電力を概算（定格25kW時に定格8.32kW）
+  const rate=g('rate');
+  const powerKW=POWER_RATED * (sup.coolEff/COOL_MAX);
+  const costH=powerKW*rate;
+  const costD=costH*24;
+  const costM=costD*30;
+  document.getElementById('m-power').textContent=powerKW.toFixed(2);
+  document.getElementById('m-cost-h').textContent=Math.round(costH).toLocaleString();
+  document.getElementById('m-cost-d').textContent=Math.round(costD).toLocaleString();
+  document.getElementById('m-cost-m').textContent=Math.round(costM).toLocaleString();
+  document.getElementById('costbox').innerHTML='⚡ <b>電気代（'+rate+'円/kWh・定格条件の概算）：約 '+Math.round(costH).toLocaleString()+' 円/h（24時間で約 '+Math.round(costD).toLocaleString()+' 円）</b>'+
+    '　推定消費電力 約'+powerKW.toFixed(2)+'kW（定格8.32kWを能力比で換算）。'+
+    '※外気温・室外機条件で実際の消費電力は変動します。インバータ特性のため能力を絞っても完全比例では下がりません。';
 
   const r1=calcDuct(Q1,n1,hd1,off1,pt1,dd1);
   const r2=calcDuct(Q2,n2,hd2,off2,pt2,dd2);
