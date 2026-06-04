@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スポットクーラー・ビニールダクト シミュレータ v14（ダイキン実機仕様）</title>
+<style>
+:root{
+  --color-text-primary:#1a1a18;--color-text-secondary:#6b6b66;
+  --color-background-primary:#ffffff;--color-background-secondary:#f4f3ec;
+  --color-border-tertiary:#e5e4dc;--color-border-secondary:#cfcec5;
+  --border-radius-lg:12px;--border-radius-md:8px;
+  --color-background-success:#e8f3ea;--color-border-success:#9ec9a6;--color-text-success:#2f6b3a;
+  --color-background-info:#e9f0fa;--color-border-info:#a9c4e6;--color-text-info:#1f4f86;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --color-text-primary:#e8e6e0;--color-text-secondary:#9b988f;
+    --color-background-primary:#26261f;--color-background-secondary:#1f1f1a;
+    --color-border-tertiary:#3a3a32;--color-border-secondary:#4a4a40;
+    --color-background-success:#1e3324;--color-border-success:#3d6b48;--color-text-success:#8fce9b;
+    --color-background-info:#1c2d44;--color-border-info:#3a5c86;--color-text-info:#92b6e0;
+  }
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--color-background-secondary);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;}
+.sw{max-width:1100px;margin:0 auto;padding:1rem;font-size:13px;color:var(--color-text-primary);}
+.panel{background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:10px;}
+.ptitle{font-size:11px;font-weight:500;color:var(--color-text-secondary);margin:0 0 10px;letter-spacing:.05em;text-transform:uppercase;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+.g6{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;}
+.ctrl{display:flex;flex-direction:column;gap:4px;}
+.ctrl label{font-size:11px;color:var(--color-text-secondary);}
+.cr{display:flex;align-items:center;gap:8px;}
+.cr input[type=range]{flex:1;}
+.cr span{font-size:12px;font-weight:500;min-width:52px;text-align:right;color:var(--color-text-primary);}
+select{font-size:12px;padding:5px 8px;border:.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);color:var(--color-text-primary);width:100%;}
+.met{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 10px;}
+.met .ml{font-size:10px;color:var(--color-text-secondary);margin-bottom:2px;line-height:1.3;}
+.met .mv{font-size:15px;font-weight:500;}
+.met .mu{font-size:10px;color:var(--color-text-secondary);}
+.c-bl{color:#185FA5;}.c-tl{color:#0F6E56;}.c-am{color:#854F0B;}.c-co{color:#993C1D;}.c-pu{color:#534AB7;}.c-pk{color:#993556;}.c-gr{color:#3B6D11;}
+.warn{background:#FAEEDA;border:.5px solid #BA7517;border-radius:var(--border-radius-md);padding:6px 10px;font-size:11px;color:#854F0B;margin-bottom:8px;display:none;}
+.warn.on{display:block;}
+.safebox{background:var(--color-background-success);border:.5px solid var(--color-border-success);border-radius:var(--border-radius-md);padding:6px 10px;font-size:11px;color:var(--color-text-success);margin-bottom:8px;}
+.specbox{background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:6px 10px;font-size:10.5px;color:var(--color-text-secondary);margin-bottom:8px;line-height:1.5;}
+.specbox b{color:var(--color-text-primary);font-weight:500;}
+.recbox{background:var(--color-background-info);border:.5px solid var(--color-border-info);border-radius:var(--border-radius-md);padding:8px 12px;font-size:12px;color:var(--color-text-info);margin-bottom:8px;line-height:1.6;}
+.recbox b{font-weight:600;}
+.balbox{border-radius:var(--border-radius-md);padding:6px 10px;font-size:11px;margin-bottom:8px;line-height:1.5;}
+.balbox.ok{background:var(--color-background-success);border:.5px solid var(--color-border-success);color:var(--color-text-success);}
+.balbox.under{background:#FAEEDA;border:.5px solid #BA7517;color:#854F0B;}
+.balbox b{font-weight:600;}
+.info-bar{background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:8px 12px;font-size:12px;display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px;}
+.info-bar span{color:var(--color-text-secondary);}
+.info-bar b{color:var(--color-text-primary);font-weight:500;}
+.cv-wrap{position:relative;}
+canvas{width:100%;border-radius:var(--border-radius-md);display:block;cursor:crosshair;}
+#tooltip{position:absolute;pointer-events:none;display:none;background:var(--color-background-primary);border:.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:8px 10px;font-size:11px;line-height:1.7;color:var(--color-text-primary);min-width:160px;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+#tooltip .tt-title{font-weight:500;font-size:12px;margin-bottom:4px;border-bottom:.5px solid var(--color-border-tertiary);padding-bottom:4px;}
+#tooltip .tt-row{display:flex;justify-content:space-between;gap:16px;}
+#tooltip .tt-val{font-weight:500;}
+.badge{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.b1{background:#E6F1FB;color:#0C447C;}.b2{background:#E1F5EE;color:#085041;}
+.hpanel{background:var(--color-background-info);border:.5px solid var(--color-border-info);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:10px;}
+.hpanel .ptitle{color:var(--color-text-info);}
+.theory-box{background:var(--color-background-secondary);border-left:3px solid #378ADD;border-radius:0 var(--border-radius-md) var(--border-radius-md) 0;padding:8px 12px;font-size:11px;color:var(--color-text-secondary);margin-bottom:10px;line-height:1.6;}
+.theory-box b{color:var(--color-text-primary);font-weight:500;}
+.veltable-wrap{overflow-x:auto;max-height:280px;overflow-y:auto;}
+table.vt{width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap;}
+table.vt th{font-weight:500;color:var(--color-text-secondary);padding:4px 6px;border-bottom:.5px solid var(--color-border-tertiary);text-align:right;position:sticky;top:0;background:var(--color-background-primary);z-index:1;}
+table.vt th:first-child{text-align:left;}
+table.vt td{padding:4px 6px;text-align:right;color:var(--color-text-primary);}
+table.vt td:first-child{text-align:left;color:var(--color-text-secondary);}
+table.vt tr:nth-child(even){background:var(--color-background-secondary);}
+table.vt .hi{font-weight:500;color:#185FA5;}
+table.vt .lo{font-weight:500;color:#993556;}
+table.vt .jet-ok{color:#3B6D11;font-weight:500;}
+table.vt .jet-lo{color:#854F0B;}
+table.vt .cond-warn{color:#993C1D;font-weight:500;}
+table.vt .rh-hi{color:#534AB7;}
+.dia-note{font-size:10px;color:var(--color-text-secondary);margin-top:3px;}
+.tbl-section{margin-bottom:14px;}
+.tbl-section-title{font-size:11px;font-weight:500;margin-bottom:6px;padding-bottom:4px;border-bottom:.5px solid var(--color-border-tertiary);}
+.colorbar{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--color-text-secondary);}
+.colorbar-grad{width:56px;height:7px;border-radius:4px;background:linear-gradient(to right,#378ADD,#9b8de8,#E24B4A);}
+.remo{background:linear-gradient(135deg,#2a2a2a,#3a3a3a);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:14px;color:#eee;margin-bottom:6px;}
+.remo .rd{font-family:monospace;font-size:26px;font-weight:600;color:#6cf;letter-spacing:1px;}
+.remo .rl{font-size:10px;color:#aaa;}
+h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary);}
+</style>
+</head>
+<body>
+<div class="sw">
+<h1>スポットクーラー・ビニールダクト シミュレータ v14（ダイキン実機仕様）</h1>
+
+<div id="warn-cond" class="warn">⚠ 一部の穴で結露が発生しています。設定温度を上げるか風量を上げてください。</div>
+<div id="warn-di"   class="warn">⚠ 吹出し空気の不快指数が75以上です。</div>
+<div id="warn-amb"  class="warn">⚠ 室内吸込温度が運転可能範囲（25〜45℃）を外れています。ダイキン実機では運転できない条件です。</div>
+
+<div class="safebox">✓ <b>お客様説明用：安全側（控えめ）計算モード</b>　測定点風速は実機の損失・拡散を考慮し低めに補正。実機では本シミュレーション以上の風速が得られる傾向です。</div>
+
+<div class="specbox">
+  <b>想定機種：ダイキン スポットエアコン クリスプ＜セパレート形＞天井吊・ダクト形</b>（SSDP140F／SSDP280F 相当・冷媒R32・3相200V）。
+  運転可能周囲温度：室内機 25〜45℃／室外機 −5〜45℃。各吹出口ダンパーで風量調整可。※スポット冷風供給機であり室温制御機ではありません。
+</div>
+
+<div class="recbox" id="recbox">推奨設定温度：—</div>
+
+<div class="theory-box">
+  <b>計算モデル（v14）：リモコン設定温度制御＋飽和制限＋開口バランス</b>　
+  リモコン設定温度（25〜30℃）に応じて室内機が冷却能力を自動調整。供給空気は露点以下に下がらず超過分は除湿に消費。各穴流量は静圧で決定。
+</div>
+
+<div id="balbox" class="balbox ok">開口バランス：—</div>
+
+<div class="info-bar">
+  <span>D1総延長：<b id="ib-l1">—</b></span>
+  <span>D2総延長：<b id="ib-l2">—</b></span>
+  <span>最近穴：<b id="ib-fn">—</b></span>
+  <span>最遠穴：<b id="ib-fe">—</b></span>
+  <span>D1入口風速：<b id="ib-iv1">—</b></span>
+  <span>D2入口風速：<b id="ib-iv2">—</b></span>
+</div>
+
+<div class="hpanel">
+  <div class="ptitle">噴流到達風速（測定点・安全側補正後）</div>
+  <div class="g4">
+    <div class="met"><div class="ml">D1 最近穴→測定点</div><div class="mv c-pk" id="j-v1n">—</div><div class="mu">m/s</div></div>
+    <div class="met"><div class="ml">D1 最遠穴→測定点</div><div class="mv c-bl" id="j-v1f">—</div><div class="mu">m/s</div></div>
+    <div class="met"><div class="ml">D2 最近穴→測定点</div><div class="mv c-pk" id="j-v2n">—</div><div class="mu">m/s</div></div>
+    <div class="met"><div class="ml">D2 最遠穴→測定点</div><div class="mv c-bl" id="j-v2f">—</div><div class="mu">m/s</div></div>
+  </div>
+  <div style="margin-top:8px;font-size:11px;color:var(--color-text-info);" id="jet-summary">—</div>
+</div>
+
+<div class="g6" style="margin-bottom:8px;">
+  <div class="met"><div class="ml">最近穴 出口風速 D1</div><div class="mv c-pk" id="m-v1n">—</div><div class="mu">m/s</div></div>
+  <div class="met"><div class="ml">最遠穴 出口風速 D1</div><div class="mv c-bl" id="m-v1f">—</div><div class="mu">m/s</div></div>
+  <div class="met"><div class="ml">最近穴 出口風速 D2</div><div class="mv c-pk" id="m-v2n">—</div><div class="mu">m/s</div></div>
+  <div class="met"><div class="ml">最遠穴 出口風速 D2</div><div class="mv c-bl" id="m-v2f">—</div><div class="mu">m/s</div></div>
+  <div class="met"><div class="ml">チャンバー出口風速</div><div class="mv c-am" id="m-ch">—</div><div class="mu">m/s</div></div>
+  <div class="met"><div class="ml">噴流鉛直距離</div><div class="mv c-gr" id="m-jdist">—</div><div class="mu">m</div></div>
+</div>
+<div class="g6" style="margin-bottom:10px;">
+  <div class="met"><div class="ml">実効冷却能力</div><div class="mv c-tl" id="m-cool-eff">—</div><div class="mu">kW</div></div>
+  <div class="met"><div class="ml">供給温度（飽和制限後）</div><div class="mv c-co" id="m-sup-t">—</div><div class="mu">°C</div></div>
+  <div class="met"><div class="ml">供給空気 露点</div><div class="mv c-pk" id="m-sup-dp">—</div><div class="mu">°C</div></div>
+  <div class="met"><div class="ml">最近穴 吹出し温度</div><div class="mv c-bl" id="m-t-near">—</div><div class="mu">°C</div></div>
+  <div class="met"><div class="ml">最遠穴 吹出し温度</div><div class="mv c-co" id="m-t-far">—</div><div class="mu">°C</div></div>
+  <div class="met"><div class="ml">最近穴 吹出し湿度</div><div class="mv c-pu" id="m-rh-near">—</div><div class="mu">%RH</div></div>
+</div>
+
+<div class="panel" style="padding:1rem;">
+  <div class="cv-wrap">
+    <canvas id="cv" height="240"></canvas>
+    <div id="tooltip"></div>
+  </div>
+  <div style="display:flex;gap:16px;margin-top:8px;align-items:center;flex-wrap:wrap;">
+    <span style="font-size:11px;color:var(--color-text-secondary);display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#378ADD;"></span>ダクト1</span>
+    <span style="font-size:11px;color:var(--color-text-secondary);display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#1D9E75;"></span>ダクト2</span>
+    <span style="font-size:11px;color:var(--color-text-secondary);display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:24px;height:2px;background:#639922;"></span>測定高さ</span>
+    <div class="colorbar" style="margin-left:auto;"><span>冷</span><div class="colorbar-grad"></div><span>暖　棒色＝穴温度　高さ＝風速比</span></div>
+  </div>
+  <div style="font-size:10px;color:var(--color-text-secondary);margin-top:3px;text-align:right;">棒にカーソルを合わせると詳細を表示</div>
+</div>
+
+<div class="panel">
+  <div class="ptitle">本体・環境設定（ダイキン実機）</div>
+  <div class="g2" style="margin-bottom:10px;">
+    <div>
+      <div class="remo">
+        <div><div class="rl">リモコン設定温度</div><div class="rd" id="remo-disp">28℃</div></div>
+        <div style="flex:1;">
+          <input type="range" id="settemp" min="25" max="30" value="28" step="1" style="width:100%;">
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:#999;"><span>25℃</span><span>30℃</span></div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--color-text-secondary);">※ダイキン実機の設定範囲。低いほど冷却能力大。</div>
+    </div>
+    <div class="ctrl"><label>運転モード（合計風量）</label>
+      <select id="mode"><option value="150" selected>高速 150 ㎥/min</option><option value="120">中速 120 ㎥/min</option><option value="80">低速 80 ㎥/min</option></select>
+      <label style="margin-top:6px;">顕熱比 SHF（ダイキン標準0.72）</label><div class="cr"><input type="range" id="shf" min="0.55" max="0.85" value="0.72" step="0.01"><span id="vshf">0.72</span></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="ctrl"><label>室内吸込（外気）乾球温度　※運転可能25〜45℃</label><div class="cr"><input type="range" id="amb" min="20" max="45" value="33" step="1"><span id="vamb">33 °C</span></div></div>
+    <div class="ctrl"><label>室内吸込 相対湿度</label><div class="cr"><input type="range" id="rh" min="20" max="100" value="60" step="5"><span id="vrh">60 %</span></div></div>
+  </div>
+</div>
+<div class="panel">
+  <div class="ptitle">噴流到達設定（安全側補正パラメータ）</div>
+  <div class="g4">
+    <div class="ctrl"><label>ダクト取付高さ（地上から）</label><div class="cr"><input type="range" id="duct-h" min="1.5" max="6" value="3" step="0.1"><span id="vdh">3.0 m</span></div></div>
+    <div class="ctrl"><label>風速測定高さ（地上から）</label><div class="cr"><input type="range" id="meas-h" min="0" max="3" value="1" step="0.1"><span id="vmh">1.0 m</span></div></div>
+    <div class="ctrl"><label>噴流係数 K（安全側標準 5.0）</label><div class="cr"><input type="range" id="jet-k" min="4" max="7" value="5.0" step="0.1"><span id="vjk">5.0</span></div></div>
+    <div class="ctrl"><label>安全係数（控えめ補正 標準0.85）</label><div class="cr"><input type="range" id="safety" min="0.5" max="1.0" value="0.85" step="0.05"><span id="vsafe">0.85</span></div></div>
+  </div>
+</div>
+<div class="g2">
+  <div class="panel">
+    <div class="ptitle"><span class="badge b1">ダクト 1</span></div>
+    <div class="ctrl"><label>ダクト直径（300〜500 mm）</label><div class="cr"><input type="range" id="d1-dd" min="300" max="500" value="500" step="50"><span id="vd1dd">500 mm</span></div></div>
+    <div class="dia-note">断面積：<b id="area-d1">—</b>　入口風速：<b id="inlet-d1">—</b></div>
+    <div style="height:5px;"></div>
+    <div class="ctrl"><label>本体〜最初の穴までの距離</label><div class="cr"><input type="range" id="d1-off" min="0.5" max="10" value="5" step="0.5"><span id="vd1off">5.0 m</span></div></div>
+    <div class="ctrl"><label>穴の数（1〜40個）</label><div class="cr"><input type="range" id="d1-n" min="1" max="40" value="20" step="1"><span id="vd1n">20 個</span></div></div>
+    <div class="ctrl"><label>穴径（50〜100 mm）</label><div class="cr"><input type="range" id="d1-d" min="50" max="100" value="100" step="5"><span id="vd1d">100 mm</span></div></div>
+    <div class="ctrl"><label>穴の間隔（ピッチ）</label><div class="cr"><input type="range" id="d1-p" min="200" max="2000" value="1350" step="50"><span id="vd1p">1350 mm</span></div></div>
+  </div>
+  <div class="panel">
+    <div class="ptitle"><span class="badge b2">ダクト 2</span></div>
+    <div class="ctrl"><label>ダクト直径（300〜500 mm）</label><div class="cr"><input type="range" id="d2-dd" min="300" max="500" value="500" step="50"><span id="vd2dd">500 mm</span></div></div>
+    <div class="dia-note">断面積：<b id="area-d2">—</b>　入口風速：<b id="inlet-d2">—</b></div>
+    <div style="height:5px;"></div>
+    <div class="ctrl"><label>本体〜最初の穴までの距離</label><div class="cr"><input type="range" id="d2-off" min="0.5" max="10" value="5" step="0.5"><span id="vd2off">5.0 m</span></div></div>
+    <div class="ctrl"><label>穴の数（1〜40個）</label><div class="cr"><input type="range" id="d2-n" min="1" max="40" value="20" step="1"><span id="vd2n">20 個</span></div></div>
+    <div class="ctrl"><label>穴径（50〜100 mm）</label><div class="cr"><input type="range" id="d2-d" min="50" max="100" value="100" step="5"><span id="vd2d">100 mm</span></div></div>
+    <div class="ctrl"><label>穴の間隔（ピッチ）</label><div class="cr"><input type="range" id="d2-p" min="200" max="2000" value="1350" step="50"><span id="vd2p">1350 mm</span></div></div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="ptitle">穴別 詳細データ　<span style="font-size:10px;font-weight:400;color:var(--color-text-secondary);">青=最遠穴　赤紫=最近穴　流量は㎥/min　結露穴は赤字</span></div>
+  <div class="tbl-section">
+    <div class="tbl-section-title" style="color:#185FA5;">ダクト1</div>
+    <div class="veltable-wrap">
+      <table class="vt" id="tbl1">
+        <thead><tr><th>穴#</th><th>距離(m)</th><th>静圧(Pa)</th><th>動圧(Pa)</th><th>出口風速(m/s)</th><th>流量(㎥/min)</th><th>温度(°C)</th><th>湿度(%RH)</th><th>露点(°C)</th><th>DI</th><th>測定点(m/s)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="tbl-section">
+    <div class="tbl-section-title" style="color:#0F6E56;">ダクト2</div>
+    <div class="veltable-wrap">
+      <table class="vt" id="tbl2">
+        <thead><tr><th>穴#</th><th>距離(m)</th><th>静圧(Pa)</th><th>動圧(Pa)</th><th>出口風速(m/s)</th><th>流量(㎥/min)</th><th>温度(°C)</th><th>湿度(%RH)</th><th>露点(°C)</th><th>DI</th><th>測定点(m/s)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const CHM_D=0.05,RHO=1.2,CP=1006;
+const CHM_A=Math.PI*(CHM_D/2)**2;
+const COOL_MAX=25;
+
+function satP(T){return 6.1078*Math.exp(17.269*T/(T+237.3));}
+function dewPt(T,rh){const ea=satP(T)*Math.max(0.5,rh)/100;return 237.3*Math.log(ea/6.1078)/(17.269-Math.log(ea/6.1078));}
+function humRatio(T,rh){const ea=satP(T)*rh/100;return 0.622*ea/(1013.25-ea);}
+function humRatioSat(T){const es=satP(T);return 0.622*es/(1013.25-es);}
+function enthalpy(T,w){return 1.006*T+w*(2501+1.86*T);}
+function rhFromW(T,w){const ea=w*1013.25/(0.622+w);return Math.min(100,Math.max(0,ea/satP(T)*100));}
+function DI(T,rh){return 0.81*T+0.01*rh*(0.99*T-14.99)+46.3;}
+function jetVel(V0,d0,x,K,safety){
+  if(x<=0||V0<=0)return V0*safety;
+  let v=(x<=6*d0)?V0:K*(d0/x)*V0;
+  return v*(1/(1+0.04*Math.max(0,x-6*d0)))*safety;
+}
+function supplyAirByRemote(ambT,ambRH,setTemp,SHF,flowM3min){
+  const massFlow=(flowM3min/60)*RHO;
+  const wIn=humRatio(ambT,ambRH);
+  const hIn=enthalpy(ambT,wIn);
+  const dT_target=Math.max(0,ambT-setTemp);
+  const sensibleNeed=massFlow*CP*dT_target/1000;
+  let coolNeed=sensibleNeed/SHF;
+  const coolEff=Math.min(COOL_MAX,coolNeed);
+  const sensibleJ=coolEff*SHF*1000/massFlow;
+  let T=ambT-sensibleJ/CP;
+  const latentJ=coolEff*(1-SHF)*1000/massFlow;
+  let w=Math.max(0,wIn-latentJ/2501000);
+  const hOut=hIn-coolEff*1000/massFlow/1000;
+  let rh=rhFromW(T,w);
+  if(rh>=99.5||w>humRatioSat(T)){
+    let lo=Math.max(-5,ambT-30),hi=ambT;
+    for(let it=0;it<40;it++){const Tm=(lo+hi)/2,wSat=humRatioSat(Tm),hSat=enthalpy(Tm,wSat);if(hSat>hOut)hi=Tm;else lo=Tm;}
+    T=(lo+hi)/2;w=humRatioSat(T);rh=100;
+  }
+  return{T,w,rh,dp:dewPt(T,Math.max(1,rh)),hIn,hOut,massFlow,wIn,coolEff,coolNeed,capped:coolNeed>COOL_MAX};
+}
+function recommendSetTemp(ambT,ambRH,SHF,flowM3min,maxRH){
+  for(let stp=25;stp<=30;stp+=1){const s=supplyAirByRemote(ambT,ambRH,stp,SHF,flowM3min);if(s.rh<=maxRH)return{setTemp:stp,T:s.T,rh:s.rh,cool:s.coolEff};}
+  return null;
+}
+function calcDuct(Q0min,nH,hd,off,pit,dd){
+  if(nH<1)return{results:[],chamberVel:0,positions:[],ductInletVel:0,balance:0};
+  const Q0=Q0min/60;
+  const Ad=Math.PI*(dd/2)**2,Ah=Math.PI*(hd/2)**2;
+  const Cd=0.58,lam=0.030;
+  const pos=Array.from({length:nH},(_,i)=>off+i*pit);
+  const seg=[off,...Array(Math.max(0,nH-1)).fill(pit)];
+  const Vch=Q0/CHM_A,Vd0=Q0/Ad;
+  const vHole_ideal=(Q0/nH)/(Cd*Ah);
+  const Ps_target=0.5*RHO*(vHole_ideal/Cd)**2;
+  function distribute(Pbase){
+    const Qh=[];let Qd=Q0;
+    let Pt=Pbase+0.5*RHO*Vd0**2;
+    Pt=Math.max(0,Pt-lam*(seg[0]/dd)*0.5*RHO*Vd0**2);
+    const sP=[],dP=[];
+    for(let i=0;i<nH;i++){
+      const Vd=Math.max(0,Qd)/Ad,Pdyn=0.5*RHO*Vd**2;
+      const Ps=Math.max(0,Pt-Pdyn);
+      sP.push(Ps);dP.push(Pdyn);
+      const qh=Cd*Ah*Math.sqrt(2*Ps/RHO);
+      Qh.push(qh);
+      const Qd_next=Math.max(0,Qd-qh),Vd_next=Qd_next/Ad;
+      if(i<nH-1)Pt=Math.max(0,Pt-lam*(seg[i+1]/dd)*0.5*RHO*Vd_next**2-0.5*RHO*(Vd-Vd_next)**2*0.2);
+      Qd=Qd_next;
+    }
+    return{Qh,sP,dP};
+  }
+  const Pmax=Ps_target*1.5;
+  let lo=0,hi=Pmax,result=distribute(Ps_target);
+  for(let it=0;it<50;it++){
+    const mid=(lo+hi)/2;result=distribute(mid);
+    const sum=result.Qh.reduce((a,b)=>a+b,0);
+    if(sum>Q0)hi=mid;else lo=mid;
+    if(Math.abs(sum-Q0)/Q0<0.0003)break;
+  }
+  let Qactual=result.Qh.reduce((a,b)=>a+b,0);
+  if(Qactual<Q0*0.999){result=distribute(Pmax);Qactual=result.Qh.reduce((a,b)=>a+b,0);}
+  return{
+    results:result.Qh.map((q,i)=>({vel:q/Ah,flow:q,staticP:result.sP[i],dynP:result.dP[i]})),
+    chamberVel:Vch,positions:pos,ductInletVel:Vd0,balance:(Qactual/Q0)*100
+  };
+}
+
+const SL=[
+  ['amb','vamb','°C'],['rh','vrh',' %'],['shf','vshf','',v=>(+v).toFixed(2)],
+  ['duct-h','vdh',' m'],['meas-h','vmh',' m'],
+  ['jet-k','vjk','',v=>(+v).toFixed(1)],['safety','vsafe','',v=>(+v).toFixed(2)],
+  ['d1-dd','vd1dd',' mm'],['d1-off','vd1off',' m'],['d1-n','vd1n',' 個'],['d1-d','vd1d',' mm'],['d1-p','vd1p',' mm'],
+  ['d2-dd','vd2dd',' mm'],['d2-off','vd2off',' m'],['d2-n','vd2n',' 個'],['d2-d','vd2d',' mm'],['d2-p','vd2p',' mm'],
+];
+SL.forEach(([id,vid,unit,fmt])=>{
+  const el=document.getElementById(id);if(!el)return;
+  el.addEventListener('input',()=>{document.getElementById(vid).textContent=fmt?fmt(el.value):el.value+(unit||'');calc();});
+});
+document.getElementById('mode').addEventListener('change',calc);
+document.getElementById('settemp').addEventListener('input',function(){document.getElementById('remo-disp').textContent=this.value+'℃';calc();});
+function g(id){return +document.getElementById(id).value;}
+
+function holeThermo(sT,sW,aT,aW,dist){
+  const k=0.015;
+  const T=sT+(aT-sT)*(1-Math.exp(-k*dist));
+  let W=sW+(aW-sW)*Math.min(1,0.005*dist);
+  W=Math.min(W,humRatioSat(T));
+  const rh=rhFromW(T,W);
+  return{T,W,rh,dp:dewPt(T,Math.max(1,rh)),di:DI(T,rh)};
+}
+
+let st={},animId=null,pp1=[],pp2=[];
+
+function calc(){
+  const amb=g('amb'),rhIn=g('rh'),setTemp=g('settemp'),SHF=g('shf'),tQ=g('mode');
+  const dH=g('duct-h'),mH=g('meas-h'),K=g('jet-k'),safety=g('safety');
+  const Q1=tQ*0.5,Q2=tQ*0.5;
+  const n1=g('d1-n'),n2=g('d2-n');
+  const dd1=g('d1-dd')/1000,dd2=g('d2-dd')/1000;
+  const hd1=g('d1-d')/1000,hd2=g('d2-d')/1000;
+  const off1=g('d1-off'),off2=g('d2-off');
+  const pt1=g('d1-p')/1000,pt2=g('d2-p')/1000;
+
+  document.getElementById('warn-amb').classList.toggle('on',amb<25||amb>45);
+
+  const A1=Math.PI*(dd1/2)**2,A2=Math.PI*(dd2/2)**2;
+  document.getElementById('area-d1').textContent=(A1*10000).toFixed(2)+' cm²';
+  document.getElementById('area-d2').textContent=(A2*10000).toFixed(2)+' cm²';
+  document.getElementById('inlet-d1').textContent=((Q1/60)/A1).toFixed(2)+' m/s';
+  document.getElementById('inlet-d2').textContent=((Q2/60)/A2).toFixed(2)+' m/s';
+
+  const sup=supplyAirByRemote(amb,rhIn,setTemp,SHF,tQ);
+  document.getElementById('m-cool-eff').textContent=sup.coolEff.toFixed(1);
+  document.getElementById('m-sup-t').textContent=sup.T.toFixed(1);
+  document.getElementById('m-sup-dp').textContent=sup.dp.toFixed(1);
+
+  const rec=recommendSetTemp(amb,rhIn,SHF,tQ,90);
+  const recEl=document.getElementById('recbox');
+  if(sup.rh>=99.5){
+    if(rec){
+      recEl.innerHTML='💡 <b>推奨設定温度：</b>現在 '+setTemp+'℃ では供給空気が飽和（露点'+sup.dp.toFixed(1)+'℃）し結露します。'+
+        '<b>設定温度を '+rec.setTemp+'℃ 以上</b>にすると結露を抑えられます（吹出し目安 '+rec.T.toFixed(1)+'℃・RH'+rec.rh.toFixed(0)+'%／実効冷却'+rec.cool.toFixed(1)+'kW）。風量を上げるのも有効です。';
+    }else{
+      recEl.innerHTML='💡 <b>推奨：</b>外気湿度が高く（RH'+rhIn+'%）、設定温度を最高(30℃)にしても結露を避けにくい条件です。風量増加・除湿運転をご検討ください。';
+    }
+  }else{
+    let capNote=sup.capped?'（冷却能力が定格25kWに達しており、設定温度'+setTemp+'℃まで完全には下がりません）':'';
+    recEl.innerHTML='✓ <b>結露なし：</b>設定温度 '+setTemp+'℃ で供給空気 '+sup.T.toFixed(1)+'℃・RH'+sup.rh.toFixed(0)+'%、結露の心配はありません。'+capNote;
+  }
+
+  const r1=calcDuct(Q1,n1,hd1,off1,pt1,dd1);
+  const r2=calcDuct(Q2,n2,hd2,off2,pt2,dd2);
+
+  const bal=Math.min(r1.balance,r2.balance);
+  const balEl=document.getElementById('balbox');
+  if(bal>=99){
+    balEl.className='balbox ok';
+    balEl.innerHTML='✓ 開口バランス：適正　D1 '+r1.balance.toFixed(0)+'% / D2 '+r2.balance.toFixed(0)+'%　供給風量を無理なく吹き出せています。';
+  }else{
+    balEl.className='balbox under';
+    balEl.innerHTML='⚠ 開口不足：D1 '+r1.balance.toFixed(0)+'% / D2 '+r2.balance.toFixed(0)+'%　穴の総開口が小さく供給風量を出しきれません。穴数・穴径を増やすことを推奨します。';
+  }
+
+  const len1=off1+Math.max(0,n1-1)*pt1,len2=off2+Math.max(0,n2-1)*pt2;
+  document.getElementById('ib-l1').textContent=len1.toFixed(1)+' m';
+  document.getElementById('ib-l2').textContent=len2.toFixed(1)+' m';
+  document.getElementById('ib-fn').textContent=Math.min(off1,off2).toFixed(1)+' m';
+  document.getElementById('ib-fe').textContent=Math.max(len1,len2).toFixed(1)+' m';
+  document.getElementById('ib-iv1').textContent=r1.ductInletVel.toFixed(2)+' m/s';
+  document.getElementById('ib-iv2').textContent=r2.ductInletVel.toFixed(2)+' m/s';
+
+  const jDist=Math.max(0.01,dH-mH);
+  document.getElementById('m-jdist').textContent=jDist.toFixed(1);
+
+  const wA=sup.wIn;
+  function addT(res,pos){return res.map((r,i)=>Object.assign({},r,holeThermo(sup.T,sup.w,amb,wA,pos[i])));}
+  const res1=addT(r1.results,r1.positions);
+  const res2=addT(r2.results,r2.positions);
+
+  const v1n=res1[0]?res1[0].vel:0,v1f=res1.length?res1[res1.length-1].vel:0;
+  const v2n=res2[0]?res2[0].vel:0,v2f=res2.length?res2[res2.length-1].vel:0;
+  const jv1n=jetVel(v1n,hd1,jDist,K,safety),jv1f=jetVel(v1f,hd1,jDist,K,safety);
+  const jv2n=jetVel(v2n,hd2,jDist,K,safety),jv2f=jetVel(v2f,hd2,jDist,K,safety);
+
+  document.getElementById('m-v1n').textContent=v1n.toFixed(2);
+  document.getElementById('m-v1f').textContent=v1f.toFixed(2);
+  document.getElementById('m-v2n').textContent=v2n.toFixed(2);
+  document.getElementById('m-v2f').textContent=v2f.toFixed(2);
+  document.getElementById('m-ch').textContent=r1.chamberVel.toFixed(2);
+  document.getElementById('m-t-near').textContent=(res1[0]?res1[0].T:0).toFixed(1);
+  document.getElementById('m-t-far').textContent=(res1.length?res1[res1.length-1].T:0).toFixed(1);
+  document.getElementById('m-rh-near').textContent=(res1[0]?res1[0].rh:0).toFixed(0);
+  document.getElementById('j-v1n').textContent=jv1n.toFixed(2);
+  document.getElementById('j-v1f').textContent=jv1f.toFixed(2);
+  document.getElementById('j-v2n').textContent=jv2n.toFixed(2);
+  document.getElementById('j-v2f').textContent=jv2f.toFixed(2);
+  const allJ=[jv1n,jv1f,jv2n,jv2f];
+  document.getElementById('jet-summary').textContent=
+    '取付'+dH.toFixed(1)+'m→測定'+mH.toFixed(1)+'m（鉛直'+jDist.toFixed(1)+'m）　設定'+setTemp+'℃　安全側補正後：平均'+(allJ.reduce((a,b)=>a+b,0)/4).toFixed(2)+' m/s　最大'+Math.max.apply(null,allJ).toFixed(2)+' m/s　最小'+Math.min.apply(null,allJ).toFixed(2)+' m/s';
+
+  document.getElementById('warn-cond').classList.toggle('on',res1.concat(res2).some(r=>r.rh>=99.5));
+  document.getElementById('warn-di').classList.toggle('on',res1.concat(res2).some(r=>r.di>=75));
+
+  fillTbl('tbl1',res1,r1.positions,hd1,jDist,K,safety);
+  fillTbl('tbl2',res2,r2.positions,hd2,jDist,K,safety);
+
+  const allT=res1.concat(res2).map(r=>r.T);
+  st={res1,res2,pos1:r1.positions,pos2:r2.positions,n1,n2,len1,len2,dd1,dd2,hd1,hd2,jDist,K,safety,amb,
+      Tmin:Math.min.apply(null,allT),Tmax:Math.max(Math.max.apply(null,allT),Math.min.apply(null,allT)+0.1)};
+  pp1=mkP(n1);pp2=mkP(n2);
+  if(!animId)animate();
+}
+
+function fillTbl(tid,res,pos,hd,jd,K,safety){
+  if(!res||!res.length){document.getElementById(tid).querySelector('tbody').innerHTML='';return;}
+  const N=res.length;
+  document.getElementById(tid).querySelector('tbody').innerHTML=res.map((r,i)=>{
+    const isFar=(i===N-1&&N>1),isNear=(i===0&&N>1);
+    const vc=isFar?'hi':isNear?'lo':'';
+    const jv=jetVel(r.vel,hd,jd,K,safety);
+    const jc=jv>=1.5?'jet-ok':jv<0.5?'jet-lo':'';
+    const cond=r.rh>=99.5;
+    return '<tr>'+
+      '<td>#'+(i+1)+'</td><td>'+pos[i].toFixed(1)+'</td>'+
+      '<td class="'+vc+'">'+r.staticP.toFixed(1)+'</td><td class="'+vc+'">'+r.dynP.toFixed(1)+'</td>'+
+      '<td class="'+vc+'">'+r.vel.toFixed(3)+'</td><td class="'+vc+'">'+(r.flow*60).toFixed(3)+'</td>'+
+      '<td class="'+(cond?'cond-warn':'')+'">'+r.T.toFixed(1)+'</td><td class="'+(r.rh>85?'rh-hi':'')+'">'+r.rh.toFixed(1)+'</td>'+
+      '<td class="'+(cond?'cond-warn':'')+'">'+r.dp.toFixed(1)+'</td><td>'+r.di.toFixed(1)+'</td>'+
+      '<td class="'+jc+'">'+jv.toFixed(2)+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function mkP(n){return Array.from({length:Math.min(n*3,80)},()=>({idx:Math.floor(Math.random()*n),life:Math.random()}));}
+
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const tooltip=document.getElementById('tooltip');
+function tRGB(T,Tmin,Tmax){const t=Tmax===Tmin?0.5:Math.max(0,Math.min(1,(T-Tmin)/(Tmax-Tmin)));return'rgb('+Math.round(55+t*(220-55))+','+Math.round(160-t*(160-60))+','+Math.round(220-t*(220-80))+')';}
+function dHpx(dd,dpr){return Math.round((7+((dd-0.3)/0.2)*6)*dpr);}
+
+let hotspots=[];
+function buildHotspots(dpr){
+  hotspots=[];
+  const s=st;
+  if(!s.res1||!s.res1.length)return;
+  const mL=72*dpr,mR=16*dpr,dW=cv.width-mL-mR;
+  const glMax=Math.max(s.len1,s.len2,0.1);
+  const DH1=dHpx(s.dd1,dpr),DH2=dHpx(s.dd2,dpr);
+  const y1=cv.height*0.28,y2=cv.height*0.60;
+  const maxV1=Math.max.apply(null,s.res1.map(r=>r.vel).concat([0.001])),maxV2=Math.max.apply(null,s.res2.map(r=>r.vel).concat([0.001]));
+  s.res1.forEach((r,i)=>{const hx=mL+dW*0.05+(s.pos1[i]/glMax)*dW*0.88;const bH=Math.max(2,(r.vel/maxV1)*44)*dpr;hotspots.push({x:hx,yTop:y1+DH1/2,yBot:y1+DH1/2+bH+30*dpr,r,idx:i,duct:1,jv:jetVel(r.vel,s.hd1,s.jDist,s.K,s.safety),pos:s.pos1[i]});});
+  s.res2.forEach((r,i)=>{const hx=mL+dW*0.05+(s.pos2[i]/glMax)*dW*0.88;const bH=Math.max(2,(r.vel/maxV2)*44)*dpr;hotspots.push({x:hx,yTop:y2+DH2/2,yBot:y2+DH2/2+bH+30*dpr,r,idx:i,duct:2,jv:jetVel(r.vel,s.hd2,s.jDist,s.K,s.safety),pos:s.pos2[i]});});
+}
+function findHole(mx,my){let best=null,bd=Infinity;hotspots.forEach(h=>{const dx=Math.abs(mx-h.x);if(dx<20&&my>=h.yTop-4&&my<=h.yBot&&dx<bd){bd=dx;best=h;}});return best;}
+
+cv.addEventListener('mousemove',e=>{
+  const rect=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  const mx=(e.clientX-rect.left)*dpr,my=(e.clientY-rect.top)*dpr;
+  const h=findHole(mx,my);
+  if(h){
+    const r=h.r,cond=r.rh>=99.5;
+    tooltip.innerHTML=
+      '<div class="tt-title">ダクト'+h.duct+'　穴 #'+(h.idx+1)+'　距離 '+h.pos.toFixed(1)+' m</div>'+
+      '<div class="tt-row"><span>出口風速</span><span class="tt-val">'+r.vel.toFixed(3)+' m/s</span></div>'+
+      '<div class="tt-row"><span>流量</span><span class="tt-val">'+(r.flow*60).toFixed(3)+' ㎥/min</span></div>'+
+      '<div class="tt-row"><span>静圧</span><span class="tt-val">'+r.staticP.toFixed(1)+' Pa</span></div>'+
+      '<div class="tt-row"><span>動圧</span><span class="tt-val">'+r.dynP.toFixed(1)+' Pa</span></div>'+
+      '<div class="tt-row"><span>吹出し温度</span><span class="tt-val" style="color:'+tRGB(r.T,st.Tmin,st.Tmax)+'">'+r.T.toFixed(1)+' °C</span></div>'+
+      '<div class="tt-row"><span>相対湿度</span><span class="tt-val">'+r.rh.toFixed(1)+' %RH</span></div>'+
+      '<div class="tt-row"><span>露点温度</span><span class="tt-val" style="'+(cond?'color:#993C1D;font-weight:500':'')+'">'+r.dp.toFixed(1)+' °C'+(cond?' ⚠結露':'')+'</span></div>'+
+      '<div class="tt-row"><span>不快指数</span><span class="tt-val">'+r.di.toFixed(1)+'</span></div>'+
+      '<div class="tt-row"><span>測定点風速</span><span class="tt-val" style="color:'+(h.jv>=1.5?'#3B6D11':h.jv>=0.5?'#854F0B':'#993C1D')+'">'+h.jv.toFixed(2)+' m/s</span></div>';
+    tooltip.style.display='block';
+    const cw=cv.getBoundingClientRect().width;
+    const tx=e.clientX-rect.left+12,ty=e.clientY-rect.top-10;
+    tooltip.style.left=(tx+180>cw?tx-200:tx)+'px';
+    tooltip.style.top=Math.max(0,ty)+'px';
+  }else tooltip.style.display='none';
+});
+cv.addEventListener('mouseleave',()=>{tooltip.style.display='none';});
+
+function animate(){
+  const W=cv.offsetWidth*(window.devicePixelRatio||1),H=240*(window.devicePixelRatio||1);
+  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}
+  const w=cv.width,h=cv.height,dpr=window.devicePixelRatio||1;
+  ctx.clearRect(0,0,w,h);
+  const dark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+  ctx.fillStyle=dark?'#1a1a18':'#f4f3ec';ctx.fillRect(0,0,w,h);
+  const tc=dark?'#888':'#777';
+  const mL=72*dpr,mR=16*dpr,dW=w-mL-mR;
+  const s=st;
+  if(!s.res1||!s.res1.length){animId=requestAnimationFrame(animate);return;}
+  const glMax=Math.max(s.len1,s.len2,0.1);
+  const DH1=dHpx(s.dd1,dpr),DH2=dHpx(s.dd2,dpr);
+  const y1=h*0.28,y2=h*0.60,measY=h*0.87;
+  const Tmin=s.Tmin,Tmax=s.Tmax;
+
+  ctx.strokeStyle=dark?'#444':'#ccc';ctx.lineWidth=.7*dpr;ctx.setLineDash([3*dpr,3*dpr]);
+  ctx.beginPath();ctx.moveTo(mL,h*0.94);ctx.lineTo(w-mR,h*0.94);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle=tc;ctx.font=(8.5*dpr)+'px sans-serif';ctx.textAlign='left';ctx.fillText('地面 0m',mL,h*0.94-2*dpr);
+
+  ctx.strokeStyle='#639922';ctx.lineWidth=1.2*dpr;ctx.setLineDash([5*dpr,3*dpr]);
+  ctx.beginPath();ctx.moveTo(mL,measY);ctx.lineTo(w-mR,measY);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#3B6D11';ctx.font='bold '+(8.5*dpr)+'px sans-serif';ctx.textAlign='right';ctx.fillText('測定 '+g('meas-h').toFixed(1)+'m',w-mR-2*dpr,measY-3*dpr);
+
+  function drawD(yc,res,posArr,color,lbl,hd,DH){
+    ctx.fillStyle=color+'33';ctx.beginPath();ctx.roundRect(mL,yc-DH/2,dW,DH,3*dpr);ctx.fill();
+    ctx.strokeStyle=color;ctx.lineWidth=.8*dpr;ctx.stroke();
+    ctx.fillStyle=tc;ctx.font=(10*dpr)+'px sans-serif';ctx.textAlign='right';ctx.fillText(lbl,mL-4*dpr,yc+3*dpr);
+    ctx.fillStyle=color;ctx.font=(8*dpr)+'px sans-serif';ctx.textAlign='left';ctx.fillText('φ'+(lbl==='D1'?g('d1-dd'):g('d2-dd'))+'mm',mL+4*dpr,yc-DH/2-3*dpr);
+    if(!res.length)return;
+    const N=res.length,maxV=Math.max.apply(null,res.map(r=>r.vel).concat([0.001]));
+    res.forEach((r,i)=>{
+      const hx=mL+dW*0.05+(posArr[i]/glMax)*dW*0.88;
+      const isFar=(i===N-1&&N>1),isNear=(i===0&&N>1);
+      const bH=Math.max(2,(r.vel/maxV)*44)*dpr;
+      const barC=tRGB(r.T,Tmin,Tmax),isCond=r.rh>=99.5;
+      ctx.strokeStyle=isCond?'#9b8de8':barC;ctx.lineWidth=Math.max(1.5,hd*1000*dpr/9);
+      ctx.globalAlpha=.65;ctx.beginPath();ctx.moveTo(hx,yc+DH/2);ctx.lineTo(hx,yc+DH/2+bH);ctx.stroke();ctx.globalAlpha=1;
+      const jv=jetVel(r.vel,hd,s.jDist,s.K,s.safety);
+      ctx.fillStyle=jv>=1.5?'#639922':jv>=0.5?'#BA7517':'#993C1D';
+      ctx.beginPath();ctx.arc(hx,measY,3*dpr,0,Math.PI*2);ctx.fill();
+      if(isFar||isNear||N===1){
+        const lx=isNear?Math.max(hx,mL+28*dpr):Math.min(hx,w-mR-28*dpr);
+        ctx.fillStyle=isFar?'#185FA5':'#993556';ctx.font='bold '+(9*dpr)+'px sans-serif';ctx.textAlign='center';
+        ctx.fillText(r.vel.toFixed(2)+' m/s',lx,yc+DH/2+bH+13*dpr);
+        ctx.fillStyle=tRGB(r.T,Tmin,Tmax);ctx.font=(8*dpr)+'px sans-serif';
+        ctx.fillText(r.T.toFixed(1)+'°C / '+r.rh.toFixed(0)+'%',lx,yc+DH/2+bH+23*dpr);
+        ctx.fillStyle=jv>=1.5?'#3B6D11':'#854F0B';ctx.fillText('→'+jv.toFixed(2)+' m/s',lx,measY+12*dpr);
+      }
+    });
+  }
+  drawD(y1,s.res1,s.pos1,'#378ADD','D1',s.hd1,DH1);
+  drawD(y2,s.res2,s.pos2,'#1D9E75','D2',s.hd2,DH2);
+  buildHotspots(dpr);
+
+  const bT=y1-DH1/2-12*dpr,bB=y2+DH2/2+12*dpr;
+  ctx.fillStyle=dark?'#2e2e2c':'#dddcd4';ctx.strokeStyle=dark?'#555':'#999';ctx.lineWidth=1.2*dpr;
+  ctx.beginPath();ctx.roundRect(4*dpr,bT,54*dpr,bB-bT,7*dpr);ctx.fill();ctx.stroke();
+  ctx.fillStyle=tc;ctx.font='bold '+(8.5*dpr)+'px sans-serif';ctx.textAlign='center';
+  ctx.fillText('本体',31*dpr,(bT+bB)/2-5*dpr);ctx.fillText('設定'+g('settemp')+'℃',31*dpr,(bT+bB)/2+7*dpr);
+  ctx.strokeStyle='#378ADD66';ctx.lineWidth=DH1*.6;ctx.beginPath();ctx.moveTo(58*dpr,y1);ctx.lineTo(mL,y1);ctx.stroke();
+  ctx.strokeStyle='#1D9E7566';ctx.lineWidth=DH2*.6;ctx.beginPath();ctx.moveTo(58*dpr,y2);ctx.lineTo(mL,y2);ctx.stroke();
+
+  ctx.fillStyle=tc;ctx.font=(8.5*dpr)+'px sans-serif';ctx.textAlign='left';ctx.fillText('0m',mL,h-2*dpr);
+  ctx.textAlign='right';ctx.fillText(glMax.toFixed(1)+'m',mL+dW*.05+dW*.88,h-2*dpr);
+  ctx.strokeStyle=tc+'55';ctx.lineWidth=.5*dpr;ctx.beginPath();ctx.moveTo(mL+dW*.05,h-9*dpr);ctx.lineTo(mL+dW*.05+dW*.88,h-9*dpr);ctx.stroke();
+
+  const parts=pp1.map(p=>({p:p,yc:y1,res:s.res1,pos:s.pos1,DH:DH1,hd:s.hd1})).concat(
+              pp2.map(p=>({p:p,yc:y2,res:s.res2,pos:s.pos2,DH:DH2,hd:s.hd2})));
+  parts.forEach(o=>{
+    const pp=o.p;
+    if(!o.res.length)return;
+    const rv=o.res[pp.idx]||{vel:0,T:s.amb};
+    const mxV=Math.max.apply(null,o.res.map(r=>r.vel).concat([0.001])),vf=rv.vel/mxV;
+    pp.life+=0.009*(0.4+vf*0.7);
+    if(pp.life>1){pp.life=0;pp.idx=Math.floor(Math.random()*o.res.length);}
+    const hx=mL+dW*0.05+(o.pos[pp.idx]/glMax)*dW*0.88;
+    const maxPY=Math.min(o.yc+o.DH/2+50*dpr,measY-2*dpr);
+    const py=o.yc+o.DH/2+pp.life*(maxPY-(o.yc+o.DH/2))*(0.5+vf*0.5);
+    const spread=(o.hd*500+s.jDist*10)*pp.life*dpr;
+    ctx.globalAlpha=(1-pp.life)*0.5*vf;ctx.fillStyle=tRGB(rv.T,Tmin,Tmax);
+    ctx.beginPath();ctx.arc(hx+Math.sin(pp.life*8+pp.idx)*spread,py,2*dpr,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+  });
+  animId=requestAnimationFrame(animate);
+}
+calc();
+window.addEventListener('resize',()=>{});
+</script>
+</body>
+</html>
