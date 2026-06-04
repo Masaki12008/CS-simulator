@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>スポットクーラー・ビニールダクト シミュレータ v14（ダイキン実機仕様）</title>
+<title>スポットクーラー・ビニールダクト シミュレータ v18（ダイキン AP150A 仕様）</title>
 <style>
 :root{
   --color-text-primary:#1a1a18;--color-text-secondary:#6b6b66;
@@ -44,6 +44,8 @@ select{font-size:12px;padding:5px 8px;border:.5px solid var(--color-border-secon
 .c-bl{color:#185FA5;}.c-tl{color:#0F6E56;}.c-am{color:#854F0B;}.c-co{color:#993C1D;}.c-pu{color:#534AB7;}.c-pk{color:#993556;}.c-gr{color:#3B6D11;}
 .warn{background:#FAEEDA;border:.5px solid #BA7517;border-radius:var(--border-radius-md);padding:6px 10px;font-size:11px;color:#854F0B;margin-bottom:8px;display:none;}
 .warn.on{display:block;}
+.warn.note-amb{background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info);}
+.warn.note-amb.over{background:#FAEEDA;border-color:#BA7517;color:#854F0B;}
 .safebox{background:var(--color-background-success);border:.5px solid var(--color-border-success);border-radius:var(--border-radius-md);padding:6px 10px;font-size:11px;color:var(--color-text-success);margin-bottom:8px;}
 .specbox{background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:6px 10px;font-size:10.5px;color:var(--color-text-secondary);margin-bottom:8px;line-height:1.5;}
 .specbox b{color:var(--color-text-primary);font-weight:500;}
@@ -94,27 +96,28 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
 </head>
 <body>
 <div class="sw">
-<h1>スポットクーラー・ビニールダクト シミュレータ v14（ダイキン実機仕様）</h1>
+<h1>スポットクーラー・ビニールダクト シミュレータ v18（ダイキン AP150A 仕様）</h1>
 
 <div id="warn-cond" class="warn">⚠ 一部の穴で結露が発生しています。設定温度を上げるか風量を上げてください。</div>
 <div id="warn-di"   class="warn">⚠ 吹出し空気の不快指数が75以上です。</div>
-<div id="warn-amb"  class="warn">⚠ 室内吸込温度が運転可能範囲（25〜45℃）を外れています。ダイキン実機では運転できない条件です。</div>
+<div id="warn-amb"  class="warn note-amb">※ 定格冷房条件（乾球27℃）を超えた酷暑環境での試算目安です。実運転は可能ですが冷却能力は定格より低下する場合があります。</div>
 
 <div class="safebox">✓ <b>お客様説明用：安全側（控えめ）計算モード</b>　測定点風速は実機の損失・拡散を考慮し低めに補正。実機では本シミュレーション以上の風速が得られる傾向です。</div>
 
 <div class="specbox">
-  <b>想定機種：ダイキン スポットエアコン クリスプ＜セパレート形＞天井吊・ダクト形</b>（SSDP140F／SSDP280F 相当・冷媒R32・3相200V）。
-  運転可能周囲温度：室内機 25〜45℃／室外機 −5〜45℃。各吹出口ダンパーで風量調整可。※スポット冷風供給機であり室温制御機ではありません。
+  <b>想定機種：ダイキン スポットエアコン AP150A（室内 AP-MU001／室外 AP-CU001・リモコン AP-RC001・冷媒R32・三相200V）</b>。定格冷却25kW（6.3〜28.0kW）。リモコン設定可能温度 20〜35℃。室内ユニット風量 急150／中120／弱80 ㎥/min。室内設置温度条件（冷房）乾球15〜27℃／湿球14〜25℃。※スポット冷風供給機であり室温制御機ではありません。
 </div>
 
 <div class="recbox" id="recbox">推奨設定温度：—</div>
 
 <div class="theory-box">
   <b>計算モデル（v14）：リモコン設定温度制御＋飽和制限＋開口バランス</b>　
-  リモコン設定温度（25〜30℃）に応じて室内機が冷却能力を自動調整。供給空気は露点以下に下がらず超過分は除湿に消費。各穴流量は静圧で決定。
+  リモコン設定温度（20〜35℃）に応じて室内機が冷却能力を自動調整。供給空気は露点以下に下がらず超過分は除湿に消費。各穴流量は静圧で決定。
 </div>
 
 <div id="balbox" class="balbox ok">開口バランス：—</div>
+
+<div class="recbox" id="drainbox" style="background:var(--color-background-secondary);border-color:var(--color-border-tertiary);color:var(--color-text-secondary);">ドレン水量：—</div>
 
 <div class="info-bar">
   <span>D1総延長：<b id="ib-l1">—</b></span>
@@ -152,6 +155,12 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
   <div class="met"><div class="ml">最遠穴 吹出し温度</div><div class="mv c-co" id="m-t-far">—</div><div class="mu">°C</div></div>
   <div class="met"><div class="ml">最近穴 吹出し湿度</div><div class="mv c-pu" id="m-rh-near">—</div><div class="mu">%RH</div></div>
 </div>
+<div class="g4" style="margin-bottom:10px;">
+  <div class="met"><div class="ml">本体除湿量（ドレン水量）</div><div class="mv c-bl" id="m-drain-h">—</div><div class="mu">L/h</div></div>
+  <div class="met"><div class="ml">ドレン水量（1日換算）</div><div class="mv c-bl" id="m-drain-d">—</div><div class="mu">L/日</div></div>
+  <div class="met"><div class="ml">除湿率（潜熱割合）</div><div class="mv c-tl" id="m-drain-ratio">—</div><div class="mu">%</div></div>
+  <div class="met"><div class="ml">ドレン排水 目安管径</div><div class="mv c-am" id="m-drain-pipe">—</div><div class="mu">—</div></div>
+</div>
 
 <div class="panel" style="padding:1rem;">
   <div class="cv-wrap">
@@ -174,8 +183,8 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
       <div class="remo">
         <div><div class="rl">リモコン設定温度</div><div class="rd" id="remo-disp">28℃</div></div>
         <div style="flex:1;">
-          <input type="range" id="settemp" min="25" max="30" value="28" step="1" style="width:100%;">
-          <div style="display:flex;justify-content:space-between;font-size:9px;color:#999;"><span>25℃</span><span>30℃</span></div>
+          <input type="range" id="settemp" min="20" max="35" value="28" step="1" style="width:100%;">
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:#999;"><span>20℃</span><span>35℃</span></div>
         </div>
       </div>
       <div style="font-size:10px;color:var(--color-text-secondary);">※ダイキン実機の設定範囲。低いほど冷却能力大。</div>
@@ -186,7 +195,7 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
     </div>
   </div>
   <div class="g2">
-    <div class="ctrl"><label>室内吸込（外気）乾球温度　※運転可能25〜45℃</label><div class="cr"><input type="range" id="amb" min="20" max="45" value="33" step="1"><span id="vamb">33 °C</span></div></div>
+    <div class="ctrl"><label>室内吸込 乾球温度　※定格条件27℃／酷暑デモは27℃超も可</label><div class="cr"><input type="range" id="amb" min="15" max="40" value="33" step="1"><span id="vamb">33 °C</span></div></div>
     <div class="ctrl"><label>室内吸込 相対湿度</label><div class="cr"><input type="range" id="rh" min="20" max="100" value="60" step="5"><span id="vrh">60 %</span></div></div>
   </div>
 </div>
@@ -284,7 +293,7 @@ function supplyAirByRemote(ambT,ambRH,setTemp,SHF,flowM3min){
   return{T,w,rh,dp:dewPt(T,Math.max(1,rh)),hIn,hOut,massFlow,wIn,coolEff,coolNeed,capped:coolNeed>COOL_MAX};
 }
 function recommendSetTemp(ambT,ambRH,SHF,flowM3min,maxRH){
-  for(let stp=25;stp<=30;stp+=1){const s=supplyAirByRemote(ambT,ambRH,stp,SHF,flowM3min);if(s.rh<=maxRH)return{setTemp:stp,T:s.T,rh:s.rh,cool:s.coolEff};}
+  for(let stp=20;stp<=35;stp+=1){const s=supplyAirByRemote(ambT,ambRH,stp,SHF,flowM3min);if(s.rh<=maxRH)return{setTemp:stp,T:s.T,rh:s.rh,cool:s.coolEff};}
   return null;
 }
 function calcDuct(Q0min,nH,hd,off,pit,dd){
@@ -366,7 +375,21 @@ function calc(){
   const off1=g('d1-off'),off2=g('d2-off');
   const pt1=g('d1-p')/1000,pt2=g('d2-p')/1000;
 
-  document.getElementById('warn-amb').classList.toggle('on',amb<25||amb>45);
+  (function(){
+    var wa=document.getElementById('warn-amb');
+    if(amb>40){
+      wa.classList.add('on');wa.classList.add('over');
+      wa.innerHTML='⚠ 室内吸込温度が40℃を超えています。AP150Aの実用上限を超える可能性があるため、メーカー仕様をご確認ください。';
+    }else if(amb>27){
+      wa.classList.add('on');wa.classList.remove('over');
+      wa.innerHTML='※ 定格冷房条件（乾球27℃）を超えた酷暑環境での試算目安です。実運転は可能ですが冷却能力は定格より低下する場合があります。';
+    }else if(amb<15){
+      wa.classList.add('on');wa.classList.remove('over');
+      wa.innerHTML='※ 室内吸込温度が15℃未満です。冷房需要が小さい低温環境での試算です。';
+    }else{
+      wa.classList.remove('on');wa.classList.remove('over');
+    }
+  })();
 
   const A1=Math.PI*(dd1/2)**2,A2=Math.PI*(dd2/2)**2;
   document.getElementById('area-d1').textContent=(A1*10000).toFixed(2)+' cm²';
@@ -379,6 +402,39 @@ function calc(){
   document.getElementById('m-sup-t').textContent=sup.T.toFixed(1);
   document.getElementById('m-sup-dp').textContent=sup.dp.toFixed(1);
 
+  // --- ドレン水量（本体除湿量）---
+  // 除湿量[kg/s] = 乾き空気質量流量[kg/s] × 絶対湿度差Δw[kg/kg]
+  // 水1kg ≒ 1L
+  const dW_drain=Math.max(0, sup.wIn - sup.w);            // kg水/kg乾き空気
+  const drainKgS=sup.massFlow * dW_drain;                  // kg/s
+  const drainLh=drainKgS*3600;                            // L/h
+  const drainLd=drainLh*24;                               // L/日（連続運転換算）
+  // 潜熱割合（全除去熱量に占める潜熱の割合）
+  const latentKW=drainKgS*2501;                           // kW（2501 kJ/kg × kg/s）
+  const totalRemKW=Math.max(0.001, sup.massFlow*(sup.hIn-sup.hOut));
+  const latentRatio=Math.min(100, Math.max(0, latentKW/totalRemKW*100));
+  // 排水目安管径（流量から簡易判定）
+  let pipe;
+  if(drainLh<20) pipe='VP20相当';
+  else if(drainLh<40) pipe='VP25相当';
+  else if(drainLh<70) pipe='VP30相当';
+  else pipe='VP40以上';
+  document.getElementById('m-drain-h').textContent=drainLh.toFixed(1);
+  document.getElementById('m-drain-d').textContent=drainLd.toFixed(0);
+  document.getElementById('m-drain-ratio').textContent=latentRatio.toFixed(0);
+  document.getElementById('m-drain-pipe').textContent=pipe;
+  const drainEl=document.getElementById('drainbox');
+  if(drainLh<0.5){
+    drainEl.innerHTML='💧 <b>ドレン水量：</b>ほぼ発生しません（除湿がほとんど起きていない運転条件です）。';
+  }else{
+    let cautionTxt='';
+    if(drainLh>=40){
+      cautionTxt=' 排水量が多めです。ドレンパンの排水能力・ドレンホースの勾配・詰まりに注意し、サブドレンパンの併設をご検討ください。';
+    }
+    drainEl.innerHTML='💧 <b>ドレン水量：約 '+drainLh.toFixed(1)+' L/h（連続運転で約 '+drainLd.toFixed(0)+' L/日）</b>'+
+      '　本体で外気の水分を 約'+(dW_drain*1000).toFixed(1)+' g/kg 除湿。除湿率（潜熱割合）約'+latentRatio.toFixed(0)+'%。'+cautionTxt;
+  }
+
   const rec=recommendSetTemp(amb,rhIn,SHF,tQ,90);
   const recEl=document.getElementById('recbox');
   if(sup.rh>=99.5){
@@ -386,7 +442,7 @@ function calc(){
       recEl.innerHTML='💡 <b>推奨設定温度：</b>現在 '+setTemp+'℃ では供給空気が飽和（露点'+sup.dp.toFixed(1)+'℃）し結露します。'+
         '<b>設定温度を '+rec.setTemp+'℃ 以上</b>にすると結露を抑えられます（吹出し目安 '+rec.T.toFixed(1)+'℃・RH'+rec.rh.toFixed(0)+'%／実効冷却'+rec.cool.toFixed(1)+'kW）。風量を上げるのも有効です。';
     }else{
-      recEl.innerHTML='💡 <b>推奨：</b>外気湿度が高く（RH'+rhIn+'%）、設定温度を最高(30℃)にしても結露を避けにくい条件です。風量増加・除湿運転をご検討ください。';
+      recEl.innerHTML='💡 <b>推奨：</b>外気湿度が高く（RH'+rhIn+'%）、設定温度を最高(35℃)にしても結露を避けにくい条件です。風量増加・除湿運転をご検討ください。';
     }
   }else{
     let capNote=sup.capped?'（冷却能力が定格25kWに達しており、設定温度'+setTemp+'℃まで完全には下がりません）':'';
@@ -610,7 +666,7 @@ function animate(){
   animId=requestAnimationFrame(animate);
 }
 calc();
-window.addEventListener('resize',()=>{});
+let _rsT;window.addEventListener('resize',()=>{clearTimeout(_rsT);_rsT=setTimeout(()=>{calc();},200);});
 </script>
 </body>
 </html>
