@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>スポットクーラー・ビニールダクト シミュレータ v19（ダイキン AP150A 仕様）</title>
+<title>スポットクーラー・ビニールダクト シミュレータ v20（ダイキン AP150A 仕様）</title>
 <style>
 :root{
   --color-text-primary:#1a1a18;--color-text-secondary:#6b6b66;
@@ -96,7 +96,7 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
 </head>
 <body>
 <div class="sw">
-<h1>スポットクーラー・ビニールダクト シミュレータ v19（ダイキン AP150A 仕様）</h1>
+<h1>スポットクーラー・ビニールダクト シミュレータ v20（ダイキン AP150A 仕様）</h1>
 
 <div id="warn-cond" class="warn">⚠ 一部の穴で結露が発生しています。設定温度を上げるか風量を上げてください。</div>
 <div id="warn-di"   class="warn">⚠ 吹出し空気の不快指数が75以上です。</div>
@@ -112,7 +112,7 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
 
 <div class="theory-box">
   <b>計算モデル（v14）：リモコン設定温度制御＋飽和制限＋開口バランス</b>　
-  リモコン設定温度（20〜35℃）に応じて室内機が冷却能力を自動調整。供給空気は露点以下に下がらず超過分は除湿に消費。各穴流量は静圧で決定。
+  リモコン設定温度（20〜35℃）で冷却能力を自動調整。<b>ファンP-Q特性とダクト抵抗の交点（動作点）で実風量を決定</b>し、穴が少ないと背圧上昇でファン風量が低下する実機挙動を再現。供給空気は露点以下に下がらず超過分は除湿に消費。
 </div>
 
 <div id="balbox" class="balbox ok">開口バランス：—</div>
@@ -268,6 +268,26 @@ const CHM_D=0.05,RHO=1.2,CP=1006;
 const CHM_A=Math.PI*(CHM_D/2)**2;
 const COOL_MAX=25;
 const POWER_RATED=8.32; // AP150A 冷房定格消費電力 kW
+// ファンP-Q特性（1吹出口=ダクト1本あたり・実測系列）[風量 m3/h, 静圧 Pa]
+// 出典：風特性 psF 実測（静圧0Pa以外想定値）
+const FAN_PQ_BASE=[[333,200],[2600,155],[4000,105],[4800,50],[5340,0]];
+// 運転モード(合計㎥/min)→ファン1台の相似スケール係数（高速150→1台75㎥/min=4500m3/hを基準1.0）
+function fanScale(totalQmin){ return (totalQmin/2)/75; } // 1台あたり風量比
+// スケール後のP-Q曲線を返す（相似則：風量∝N, 静圧∝N^2）
+function fanCurve(totalQmin){
+  const k=fanScale(totalQmin);
+  return FAN_PQ_BASE.map(p=>[p[0]*k, p[1]*k*k]);
+}
+// 与えた風量[m3/h]に対するファン発生静圧[Pa]（曲線を線形補間）
+function fanPressure(curve, q){
+  if(q<=curve[0][0]) return curve[0][1];
+  if(q>=curve[curve.length-1][0]) return 0;
+  for(let i=0;i<curve.length-1;i++){
+    const [q1,p1]=curve[i],[q2,p2]=curve[i+1];
+    if(q>=q1&&q<=q2){ return p1+(p2-p1)*(q-q1)/(q2-q1); }
+  }
+  return 0;
+}
 
 function satP(T){return 6.1078*Math.exp(17.269*T/(T+237.3));}
 function dewPt(T,rh){const ea=satP(T)*Math.max(0.5,rh)/100;return 237.3*Math.log(ea/6.1078)/(17.269-Math.log(ea/6.1078));}
@@ -306,6 +326,46 @@ function recommendSetTemp(ambT,ambRH,SHF,flowM3min,maxRH){
   for(let stp=20;stp<=35;stp+=1){const s=supplyAirByRemote(ambT,ambRH,stp,SHF,flowM3min);if(s.rh<=maxRH)return{setTemp:stp,T:s.T,rh:s.rh,cool:s.coolEff};}
   return null;
 }
+// ダクト系抵抗：1ダクトに流量Q1min[㎥/min]を流したとき、全穴から出すのに必要なダクト入口静圧[Pa]
+function ductResistance(Q1min,nH,hd,off,pit,dd){
+  if(nH<1||Q1min<=0) return 0;
+  const Q=Q1min/60;                 // m3/s
+  const Ah=Math.PI*(hd/2)**2;
+  const Cd=0.58, lam=0.030;
+  const Ad=Math.PI*(dd/2)**2;
+  // 穴を通すのに必要な静圧（均等配分の代表値）：q=Cd*Ah*sqrt(2Ps/ρ) を逆解き
+  const qHole=Q/nH;
+  const vThroat=qHole/(Cd*Ah);
+  const Ps_hole=0.5*RHO*vThroat*vThroat;   // 必要静圧 [Pa]
+  // ダクト摩擦損失（全長ぶん、入口風速基準の概算）
+  const len=off+Math.max(0,nH-1)*pit;
+  const Vd=Q/Ad;
+  const dPf=lam*(len/Math.max(0.01,dd))*0.5*RHO*Vd*Vd;
+  return Ps_hole+dPf;
+}
+// 動作点：ファンP-Q曲線とダクト抵抗曲線の交点で実風量[㎥/min/1ダクト]を求める
+function operatingPoint(totalQmin,nH,hd,off,pit,dd){
+  const curve=fanCurve(totalQmin);
+  const qMax1=curve[curve.length-1][0];      // 1台最大風量 m3/h（静圧0）
+  const nominal1=totalQmin/2;                // 1ダクト公称風量 ㎥/min
+  if(nH<1) return {q1min:nominal1, fanP:0, ratio:100};
+  // 二分法：ファン発生静圧 == ダクト必要静圧 となる風量 q[m3/h] を探す
+  let lo=1, hi=qMax1;
+  for(let it=0;it<50;it++){
+    const qh=(lo+hi)/2;                       // m3/h
+    const qmin=qh/60;                         // ㎥/min
+    const fanP=fanPressure(curve,qh);         // ファンが出せる静圧
+    const ductP=ductResistance(qmin,nH,hd,off,pit,dd); // ダクトが要求する静圧
+    // fanP>ductP なら余裕あり→もっと流せる→qを上げる
+    if(fanP>ductP) lo=qh; else hi=qh;
+  }
+  const q1=(lo+hi)/2;                          // m3/h
+  const q1min=q1/60;                           // ㎥/min（1ダクト実風量）
+  const fanP=fanPressure(curve,q1);
+  const ratio=Math.min(150, q1min/nominal1*100); // 公称比 %
+  return {q1min, fanP, ratio, nominal1};
+}
+
 function calcDuct(Q0min,nH,hd,off,pit,dd){
   if(nH<1)return{results:[],chamberVel:0,positions:[],ductInletVel:0,balance:0};
   const Q0=Q0min/60;
@@ -378,12 +438,18 @@ let st={},animId=null,pp1=[],pp2=[];
 function calc(){
   const amb=g('amb'),rhIn=g('rh'),setTemp=g('settemp'),SHF=g('shf'),tQ=g('mode');
   const dH=g('duct-h'),mH=g('meas-h'),K=g('jet-k'),safety=g('safety');
-  const Q1=tQ*0.5,Q2=tQ*0.5;
+  let Q1=tQ*0.5,Q2=tQ*0.5; // 公称（暫定）
   const n1=g('d1-n'),n2=g('d2-n');
   const dd1=g('d1-dd')/1000,dd2=g('d2-dd')/1000;
   const hd1=g('d1-d')/1000,hd2=g('d2-d')/1000;
   const off1=g('d1-off'),off2=g('d2-off');
   const pt1=g('d1-p')/1000,pt2=g('d2-p')/1000;
+
+  // --- 動作点：ファンP-Q特性 × ダクト抵抗 の交点で実風量を決定（1ダクトごと）---
+  const op1=operatingPoint(tQ,n1,hd1,off1,pt1,dd1);
+  const op2=operatingPoint(tQ,n2,hd2,off2,pt2,dd2);
+  Q1=op1.q1min;  // 1ダクト実風量 ㎥/min
+  Q2=op2.q1min;
 
   (function(){
     var wa=document.getElementById('warn-amb');
@@ -407,7 +473,8 @@ function calc(){
   document.getElementById('inlet-d1').textContent=((Q1/60)/A1).toFixed(2)+' m/s';
   document.getElementById('inlet-d2').textContent=((Q2/60)/A2).toFixed(2)+' m/s';
 
-  const sup=supplyAirByRemote(amb,rhIn,setTemp,SHF,tQ);
+  const Qactual_total=Q1+Q2; // 実風量合計 ㎥/min（動作点ベース）
+  const sup=supplyAirByRemote(amb,rhIn,setTemp,SHF,Qactual_total);
   document.getElementById('m-cool-eff').textContent=sup.coolEff.toFixed(1);
   document.getElementById('m-sup-t').textContent=sup.T.toFixed(1);
   document.getElementById('m-sup-dp').textContent=sup.dp.toFixed(1);
@@ -445,7 +512,7 @@ function calc(){
       '　本体で外気の水分を 約'+(dW_drain*1000).toFixed(1)+' g/kg 除湿。除湿率（潜熱割合）約'+latentRatio.toFixed(0)+'%。'+cautionTxt;
   }
 
-  const rec=recommendSetTemp(amb,rhIn,SHF,tQ,90);
+  const rec=recommendSetTemp(amb,rhIn,SHF,Qactual_total,90);
   const recEl=document.getElementById('recbox');
   if(sup.rh>=99.5){
     if(rec){
@@ -477,14 +544,20 @@ function calc(){
   const r1=calcDuct(Q1,n1,hd1,off1,pt1,dd1);
   const r2=calcDuct(Q2,n2,hd2,off2,pt2,dd2);
 
-  const bal=Math.min(r1.balance,r2.balance);
+  // --- 動作点による実風量・風量低下の表示 ---
+  const nominal1=tQ/2;
+  const drop1=(1-Q1/nominal1)*100, drop2=(1-Q2/nominal1)*100;
+  const worstDrop=Math.max(drop1,drop2);
   const balEl=document.getElementById('balbox');
-  if(bal>=99){
+  if(worstDrop<3){
     balEl.className='balbox ok';
-    balEl.innerHTML='✓ 開口バランス：適正　D1 '+r1.balance.toFixed(0)+'% / D2 '+r2.balance.toFixed(0)+'%　供給風量を無理なく吹き出せています。';
+    balEl.innerHTML='✓ <b>動作点：適正</b>　ファン公称 各'+nominal1.toFixed(0)+'㎥/min に対し実風量 D1 '+Q1.toFixed(1)+' / D2 '+Q2.toFixed(1)+' ㎥/min（低下 約'+worstDrop.toFixed(0)+'%）。背圧 D1 '+op1.fanP.toFixed(0)+' / D2 '+op2.fanP.toFixed(0)+' Pa。穴が十分で風量がほぼ落ちていません。';
+  }else if(worstDrop<20){
+    balEl.className='balbox ok';
+    balEl.innerHTML='✓ <b>動作点：やや背圧上昇</b>　実風量 D1 '+Q1.toFixed(1)+' / D2 '+Q2.toFixed(1)+' ㎥/min（公称比 −'+worstDrop.toFixed(0)+'%）。背圧 D1 '+op1.fanP.toFixed(0)+' / D2 '+op2.fanP.toFixed(0)+' Pa。穴の絞りで多少風量が低下しています。';
   }else{
     balEl.className='balbox under';
-    balEl.innerHTML='⚠ 開口不足：D1 '+r1.balance.toFixed(0)+'% / D2 '+r2.balance.toFixed(0)+'%　穴の総開口が小さく供給風量を出しきれません。穴数・穴径を増やすことを推奨します。';
+    balEl.innerHTML='⚠ <b>動作点：風量低下大</b>　穴の総開口が小さく背圧が上昇、ファン風量が公称より D1 −'+drop1.toFixed(0)+'% / D2 −'+drop2.toFixed(0)+'% 低下しています（実風量 D1 '+Q1.toFixed(1)+' / D2 '+Q2.toFixed(1)+' ㎥/min・背圧 D1 '+op1.fanP.toFixed(0)+'/D2 '+op2.fanP.toFixed(0)+' Pa）。穴数・穴径を増やすと改善します。';
   }
 
   const len1=off1+Math.max(0,n1-1)*pt1,len2=off2+Math.max(0,n2-1)*pt2;
