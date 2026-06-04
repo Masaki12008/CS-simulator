@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>スポットクーラー・ビニールダクト シミュレータ v20（ダイキン AP150A 仕様）</title>
+<title>スポットクーラー・ビニールダクト シミュレータ v22（オリオン機械 クールストライカー AP150A 仕様）</title>
 <style>
 :root{
   --color-text-primary:#1a1a18;--color-text-secondary:#6b6b66;
@@ -83,6 +83,17 @@ table.vt .jet-ok{color:#3B6D11;font-weight:500;}
 table.vt .jet-lo{color:#854F0B;}
 table.vt .cond-warn{color:#993C1D;font-weight:500;}
 table.vt .rh-hi{color:#534AB7;}
+@media(max-width:600px){
+  .g6{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .g4{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .g3{grid-template-columns:1fr 1fr;}
+  .g2{grid-template-columns:1fr;}
+  .hpanel .g4{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media(max-width:380px){
+  .g6{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .g4{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
 .dia-note{font-size:10px;color:var(--color-text-secondary);margin-top:3px;}
 .tbl-section{margin-bottom:14px;}
 .tbl-section-title{font-size:11px;font-weight:500;margin-bottom:6px;padding-bottom:4px;border-bottom:.5px solid var(--color-border-tertiary);}
@@ -96,22 +107,24 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
 </head>
 <body>
 <div class="sw">
-<h1>スポットクーラー・ビニールダクト シミュレータ v20（ダイキン AP150A 仕様）</h1>
+<h1>スポットクーラー・ビニールダクト シミュレータ v22（オリオン機械 クールストライカー AP150A 仕様）</h1>
 
 <div id="warn-cond" class="warn">⚠ 一部の穴で結露が発生しています。設定温度を上げるか風量を上げてください。</div>
 <div id="warn-di"   class="warn">⚠ 吹出し空気の不快指数が75以上です。</div>
 <div id="warn-amb"  class="warn note-amb">※ 定格冷房条件（乾球27℃）を超えた酷暑環境での試算目安です。実運転は可能ですが冷却能力は定格より低下する場合があります。</div>
+<div id="warn-height" class="warn">⚠ 風速測定高さがダクト中心高さ以上です。噴流は下向きに吹き出すため、測定高さはダクト中心より低く設定してください。</div>
 
-<div class="safebox">✓ <b>お客様説明用：安全側（控えめ）計算モード</b>　測定点風速は実機の損失・拡散を考慮し低めに補正。実機では本シミュレーション以上の風速が得られる傾向です。</div>
+<div class="safebox">✓ <b>お客様説明用：安全側（控えめ）計算モード</b>　測定点風速は実機の損失・拡散を考慮して安全係数（標準0.85）で低めに補正しています。実機では本シミュレーション以上の風速が得られる傾向があるため、お客様への提案はこの計算値でご説明いただけます。</div>
 
 <div class="specbox">
-  <b>想定機種：ダイキン スポットエアコン AP150A（室内 AP-MU001／室外 AP-CU001・リモコン AP-RC001・冷媒R32・三相200V）</b>。定格冷却25kW（6.3〜28.0kW）。リモコン設定可能温度 20〜35℃。室内ユニット風量 急150／中120／弱80 ㎥/min。室内設置温度条件（冷房）乾球15〜27℃／湿球14〜25℃。※スポット冷風供給機であり室温制御機ではありません。
+  <b>想定機種：オリオン機械 酷暑対策空調機クールストライカー AP150A（室内ユニット／室外ユニット／リモコン別売・冷媒R32・三相200V）</b>。定格冷却25kW（6.3〜28.0kW）。リモコン設定可能温度 冷房20〜35℃。室内ユニット風量 急150／強120／弱80 ㎥/min。室内設置温度条件（冷房）乾球15〜27℃／湿球14〜25℃。※スポット冷風供給機であり室温制御機ではありません。<br>
+  ※ファンP-Q特性は静圧0Pa点のみ実測値に基づき、その他の点は相似則による推定値です。実機の特性と異なる場合があります。
 </div>
 
 <div class="recbox" id="recbox">推奨設定温度：—</div>
 
 <div class="theory-box">
-  <b>計算モデル（v14）：リモコン設定温度制御＋飽和制限＋開口バランス</b>　
+  <b>計算モデル（v22）：リモコン設定温度制御＋飽和制限＋開口バランス</b>　
   リモコン設定温度（20〜35℃）で冷却能力を自動調整。<b>ファンP-Q特性とダクト抵抗の交点（動作点）で実風量を決定</b>し、穴が少ないと背圧上昇でファン風量が低下する実機挙動を再現。供給空気は露点以下に下がらず超過分は除湿に消費。
 </div>
 
@@ -146,7 +159,8 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
   <div class="met"><div class="ml">最遠穴 出口風速 D1</div><div class="mv c-bl" id="m-v1f">—</div><div class="mu">m/s</div></div>
   <div class="met"><div class="ml">最近穴 出口風速 D2</div><div class="mv c-pk" id="m-v2n">—</div><div class="mu">m/s</div></div>
   <div class="met"><div class="ml">最遠穴 出口風速 D2</div><div class="mv c-bl" id="m-v2f">—</div><div class="mu">m/s</div></div>
-  <div class="met"><div class="ml">チャンバー出口風速</div><div class="mv c-am" id="m-ch">—</div><div class="mu">m/s</div></div>
+  <div class="met"><div class="ml">チャンバー出口風速 D1</div><div class="mv c-am" id="m-ch1">—</div><div class="mu">m/s</div></div>
+  <div class="met"><div class="ml">チャンバー出口風速 D2</div><div class="mv c-am" id="m-ch2">—</div><div class="mu">m/s</div></div>
   <div class="met"><div class="ml">噴流鉛直距離</div><div class="mv c-gr" id="m-jdist">—</div><div class="mu">m</div></div>
 </div>
 <div class="g6" style="margin-bottom:10px;">
@@ -185,7 +199,7 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
 </div>
 
 <div class="panel">
-  <div class="ptitle">本体・環境設定（ダイキン実機）</div>
+  <div class="ptitle">本体・環境設定（クールストライカー AP150A）</div>
   <div class="g2" style="margin-bottom:10px;">
     <div>
       <div class="remo">
@@ -195,11 +209,11 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
           <div style="display:flex;justify-content:space-between;font-size:9px;color:#999;"><span>20℃</span><span>35℃</span></div>
         </div>
       </div>
-      <div style="font-size:10px;color:var(--color-text-secondary);">※ダイキン実機の設定範囲。低いほど冷却能力大。</div>
+      <div style="font-size:10px;color:var(--color-text-secondary);">※AP150A実機の設定範囲（冷房20〜35℃）。低いほど冷却能力大。</div>
     </div>
     <div class="ctrl"><label>運転モード（合計風量）</label>
       <select id="mode"><option value="150" selected>高速 150 ㎥/min</option><option value="120">中速 120 ㎥/min</option><option value="80">低速 80 ㎥/min</option></select>
-      <label style="margin-top:6px;">顕熱比 SHF（ダイキン標準0.72）</label><div class="cr"><input type="range" id="shf" min="0.55" max="0.85" value="0.72" step="0.01"><span id="vshf">0.72</span></div>
+      <label style="margin-top:6px;">顕熱比 SHF（AP150A標準0.72）</label><div class="cr"><input type="range" id="shf" min="0.55" max="0.85" value="0.72" step="0.01"><span id="vshf">0.72</span></div>
       <label style="margin-top:6px;">電気料金単価（円/kWh）</label><div class="cr"><input type="range" id="rate" min="15" max="50" value="31" step="1"><span id="vrate">31 円</span></div>
     </div>
   </div>
@@ -211,7 +225,7 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
 <div class="panel">
   <div class="ptitle">噴流到達設定（安全側補正パラメータ）</div>
   <div class="g4">
-    <div class="ctrl"><label>ダクト取付高さ（地上から）</label><div class="cr"><input type="range" id="duct-h" min="1.5" max="6" value="3" step="0.1"><span id="vdh">3.0 m</span></div></div>
+    <div class="ctrl"><label>ダクト取付高さ（地上〜ダクト中心）</label><div class="cr"><input type="range" id="duct-h" min="1.5" max="6" value="3" step="0.1"><span id="vdh">3.0 m</span></div></div>
     <div class="ctrl"><label>風速測定高さ（地上から）</label><div class="cr"><input type="range" id="meas-h" min="0" max="3" value="1" step="0.1"><span id="vmh">1.0 m</span></div></div>
     <div class="ctrl"><label>噴流係数 K（安全側標準 5.0）</label><div class="cr"><input type="range" id="jet-k" min="4" max="7" value="5.0" step="0.1"><span id="vjk">5.0</span></div></div>
     <div class="ctrl"><label>安全係数（控えめ補正 標準0.85）</label><div class="cr"><input type="range" id="safety" min="0.5" max="1.0" value="0.85" step="0.05"><span id="vsafe">0.85</span></div></div>
@@ -224,7 +238,7 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
     <div class="dia-note">断面積：<b id="area-d1">—</b>　入口風速：<b id="inlet-d1">—</b></div>
     <div style="height:5px;"></div>
     <div class="ctrl"><label>本体〜最初の穴までの距離</label><div class="cr"><input type="range" id="d1-off" min="0.5" max="10" value="5" step="0.5"><span id="vd1off">5.0 m</span></div></div>
-    <div class="ctrl"><label>穴の数（1〜40個）</label><div class="cr"><input type="range" id="d1-n" min="1" max="40" value="20" step="1"><span id="vd1n">20 個</span></div></div>
+    <div class="ctrl"><label>穴の数（1〜60個）</label><div class="cr"><input type="range" id="d1-n" min="1" max="60" value="20" step="1"><span id="vd1n">20 個</span></div></div>
     <div class="ctrl"><label>穴径（50〜100 mm）</label><div class="cr"><input type="range" id="d1-d" min="50" max="100" value="100" step="5"><span id="vd1d">100 mm</span></div></div>
     <div class="ctrl"><label>穴の間隔（ピッチ）</label><div class="cr"><input type="range" id="d1-p" min="200" max="2000" value="1350" step="50"><span id="vd1p">1350 mm</span></div></div>
   </div>
@@ -234,7 +248,7 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
     <div class="dia-note">断面積：<b id="area-d2">—</b>　入口風速：<b id="inlet-d2">—</b></div>
     <div style="height:5px;"></div>
     <div class="ctrl"><label>本体〜最初の穴までの距離</label><div class="cr"><input type="range" id="d2-off" min="0.5" max="10" value="5" step="0.5"><span id="vd2off">5.0 m</span></div></div>
-    <div class="ctrl"><label>穴の数（1〜40個）</label><div class="cr"><input type="range" id="d2-n" min="1" max="40" value="20" step="1"><span id="vd2n">20 個</span></div></div>
+    <div class="ctrl"><label>穴の数（1〜60個）</label><div class="cr"><input type="range" id="d2-n" min="1" max="60" value="20" step="1"><span id="vd2n">20 個</span></div></div>
     <div class="ctrl"><label>穴径（50〜100 mm）</label><div class="cr"><input type="range" id="d2-d" min="50" max="100" value="100" step="5"><span id="vd2d">100 mm</span></div></div>
     <div class="ctrl"><label>穴の間隔（ピッチ）</label><div class="cr"><input type="range" id="d2-p" min="200" max="2000" value="1350" step="50"><span id="vd2p">1350 mm</span></div></div>
   </div>
@@ -267,7 +281,7 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
 const CHM_D=0.05,RHO=1.2,CP=1006;
 const CHM_A=Math.PI*(CHM_D/2)**2;
 const COOL_MAX=25;
-const POWER_RATED=8.32; // AP150A 冷房定格消費電力 kW
+const POWER_RATED=8.32; // AP150A 冷房定格消費電力 kW（オリオン機械 クールストライカー）
 // ファンP-Q特性（1吹出口=ダクト1本あたり・実測系列）[風量 m3/h, 静圧 Pa]
 // 出典：風特性 psF 実測（静圧0Pa以外想定値）
 const FAN_PQ_BASE=[[333,200],[2600,155],[4000,105],[4800,50],[5340,0]];
@@ -344,6 +358,7 @@ function ductResistance(Q1min,nH,hd,off,pit,dd){
   return Ps_hole+dPf;
 }
 // 動作点：ファンP-Q曲線とダクト抵抗曲線の交点で実風量[㎥/min/1ダクト]を求める
+// 注：fanCurveの風量軸は m³/h、ductResistanceの引数は ㎥/min。二分法はm³/h単位で行い最後に/60で㎥/minへ変換。
 function operatingPoint(totalQmin,nH,hd,off,pit,dd){
   const curve=fanCurve(totalQmin);
   const qMax1=curve[curve.length-1][0];      // 1台最大風量 m3/h（静圧0）
@@ -455,7 +470,7 @@ function calc(){
     var wa=document.getElementById('warn-amb');
     if(amb>40){
       wa.classList.add('on');wa.classList.add('over');
-      wa.innerHTML='⚠ 室内吸込温度が40℃を超えています。AP150Aの実用上限を超える可能性があるため、メーカー仕様をご確認ください。';
+      wa.innerHTML='⚠ 室内吸込温度が40℃を超えています。クールストライカー AP150A の実用上限を超える可能性があるため、メーカー仕様をご確認ください。';
     }else if(amb>27){
       wa.classList.add('on');wa.classList.remove('over');
       wa.innerHTML='※ 定格冷房条件（乾球27℃）を超えた酷暑環境での試算目安です。実運転は可能ですが冷却能力は定格より低下する場合があります。';
@@ -545,8 +560,8 @@ function calc(){
   const r2=calcDuct(Q2,n2,hd2,off2,pt2,dd2);
 
   // --- 動作点による実風量・風量低下の表示 ---
-  const nominal1=tQ/2;
-  const drop1=(1-Q1/nominal1)*100, drop2=(1-Q2/nominal1)*100;
+  const nominal1=tQ/2, nominal2=tQ/2;
+  const drop1=(1-Q1/nominal1)*100, drop2=(1-Q2/nominal2)*100;
   const worstDrop=Math.max(drop1,drop2);
   const balEl=document.getElementById('balbox');
   if(worstDrop<3){
@@ -569,6 +584,7 @@ function calc(){
   document.getElementById('ib-iv2').textContent=r2.ductInletVel.toFixed(2)+' m/s';
 
   const jDist=Math.max(0.01,dH-mH);
+  document.getElementById('warn-height').classList.toggle('on', mH>=dH);
   document.getElementById('m-jdist').textContent=jDist.toFixed(1);
 
   const wA=sup.wIn;
@@ -585,7 +601,8 @@ function calc(){
   document.getElementById('m-v1f').textContent=v1f.toFixed(2);
   document.getElementById('m-v2n').textContent=v2n.toFixed(2);
   document.getElementById('m-v2f').textContent=v2f.toFixed(2);
-  document.getElementById('m-ch').textContent=r1.chamberVel.toFixed(2);
+  document.getElementById('m-ch1').textContent=r1.chamberVel.toFixed(2);
+  document.getElementById('m-ch2').textContent=r2.chamberVel.toFixed(2);
   document.getElementById('m-t-near').textContent=(res1[0]?res1[0].T:0).toFixed(1);
   document.getElementById('m-t-far').textContent=(res1.length?res1[res1.length-1].T:0).toFixed(1);
   document.getElementById('m-rh-near').textContent=(res1[0]?res1[0].rh:0).toFixed(0);
@@ -630,7 +647,7 @@ function fillTbl(tid,res,pos,hd,jd,K,safety){
   }).join('');
 }
 
-function mkP(n){return Array.from({length:Math.min(n*3,80)},()=>({idx:Math.floor(Math.random()*n),life:Math.random()}));}
+function mkP(n){return Array.from({length:Math.min(n*3,120)},()=>({idx:Math.floor(Math.random()*n),life:Math.random()}));}
 
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 const tooltip=document.getElementById('tooltip');
@@ -677,6 +694,43 @@ cv.addEventListener('mousemove',e=>{
   }else tooltip.style.display='none';
 });
 cv.addEventListener('mouseleave',()=>{tooltip.style.display='none';});
+
+function showTooltipAtClient(clientX,clientY){
+  const rect=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  const mx=(clientX-rect.left)*dpr,my=(clientY-rect.top)*dpr;
+  const h=findHole(mx,my);
+  if(h){
+    const r=h.r,cond=r.rh>=99.5;
+    tooltip.innerHTML=
+      '<div class="tt-title">ダクト'+h.duct+'　穴 #'+(h.idx+1)+'　距離 '+h.pos.toFixed(1)+' m</div>'+
+      '<div class="tt-row"><span>出口風速</span><span class="tt-val">'+r.vel.toFixed(3)+' m/s</span></div>'+
+      '<div class="tt-row"><span>流量</span><span class="tt-val">'+(r.flow*60).toFixed(3)+' ㎥/min</span></div>'+
+      '<div class="tt-row"><span>静圧</span><span class="tt-val">'+r.staticP.toFixed(1)+' Pa</span></div>'+
+      '<div class="tt-row"><span>動圧</span><span class="tt-val">'+r.dynP.toFixed(1)+' Pa</span></div>'+
+      '<div class="tt-row"><span>吹出し温度</span><span class="tt-val" style="color:'+tRGB(r.T,st.Tmin,st.Tmax)+'">'+r.T.toFixed(1)+' °C</span></div>'+
+      '<div class="tt-row"><span>相対湿度</span><span class="tt-val">'+r.rh.toFixed(1)+' %RH</span></div>'+
+      '<div class="tt-row"><span>露点温度</span><span class="tt-val" style="'+(cond?'color:#993C1D;font-weight:500':'')+'">'+r.dp.toFixed(1)+' °C'+(cond?' ⚠結露':'')+'</span></div>'+
+      '<div class="tt-row"><span>不快指数</span><span class="tt-val">'+r.di.toFixed(1)+'</span></div>'+
+      '<div class="tt-row"><span>測定点風速</span><span class="tt-val" style="color:'+(h.jv>=1.5?'#3B6D11':h.jv>=0.5?'#854F0B':'#993C1D')+'">'+h.jv.toFixed(2)+' m/s</span></div>';
+    tooltip.style.display='block';
+    const cw=cv.getBoundingClientRect().width;
+    const tx=clientX-rect.left+12,ty=clientY-rect.top-10;
+    tooltip.style.left=(tx+180>cw?tx-200:tx)+'px';
+    tooltip.style.top=Math.max(0,ty)+'px';
+    return true;
+  }
+  tooltip.style.display='none';
+  return false;
+}
+cv.addEventListener('touchstart',e=>{
+  const t=e.touches[0];
+  if(showTooltipAtClient(t.clientX,t.clientY))e.preventDefault();
+},{passive:false});
+cv.addEventListener('touchmove',e=>{
+  const t=e.touches[0];
+  if(showTooltipAtClient(t.clientX,t.clientY))e.preventDefault();
+},{passive:false});
+cv.addEventListener('touchend',()=>{setTimeout(()=>{tooltip.style.display='none';},1800);});
 
 function animate(){
   const W=cv.offsetWidth*(window.devicePixelRatio||1),H=240*(window.devicePixelRatio||1);
