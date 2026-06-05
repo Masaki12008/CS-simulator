@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>スポットクーラー・ビニールダクト シミュレータ v24（オリオン機械 クールストライカー AP150A 仕様）</title>
+<title>スポットクーラー・ビニールダクト シミュレータ v25（オリオン機械 クールストライカー AP150A 仕様）</title>
 <style>
 :root{
   --color-text-primary:#1a1a18;--color-text-secondary:#6b6b66;
@@ -107,7 +107,7 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
 </head>
 <body>
 <div class="sw">
-<h1>スポットクーラー・ビニールダクト シミュレータ v24（オリオン機械 クールストライカー AP150A 仕様）</h1>
+<h1>スポットクーラー・ビニールダクト シミュレータ v25（オリオン機械 クールストライカー AP150A 仕様）</h1>
 
 <div id="warn-cond" class="warn">⚠ 一部の穴で結露が発生しています。設定温度を上げるか風量を上げてください。</div>
 <div id="warn-di"   class="warn">⚠ 吹出し空気の不快指数が75以上です。</div>
@@ -124,7 +124,7 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
 <div class="recbox" id="recbox">推奨設定温度：—</div>
 
 <div class="theory-box">
-  <b>計算モデル（v24）：リモコン設定温度制御＋飽和制限＋開口バランス</b>　
+  <b>計算モデル（v25）：リモコン設定温度制御＋飽和制限＋開口バランス</b>　
   リモコン設定温度（20〜35℃）で冷却能力を自動調整。<b>ファンP-Q特性とダクト抵抗の交点（動作点）で実風量を決定</b>し、穴が少ないと背圧上昇でファン風量が低下する実機挙動を再現。供給空気は露点以下に下がらず超過分は除湿に消費。
 </div>
 
@@ -234,22 +234,22 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px;color:var(--color-text-primary
 <div class="g2">
   <div class="panel">
     <div class="ptitle"><span class="badge b1">ダクト 1</span></div>
-    <div class="ctrl"><label>ダクト直径（300〜500 mm）</label><div class="cr"><input type="range" id="d1-dd" min="300" max="500" value="500" step="50"><span id="vd1dd">500 mm</span></div></div>
+    <div class="ctrl"><label>ダクト直径（300〜600 mm）</label><div class="cr"><input type="range" id="d1-dd" min="300" max="600" value="500" step="50"><span id="vd1dd">500 mm</span></div></div>
     <div class="dia-note">断面積：<b id="area-d1">—</b>　入口風速：<b id="inlet-d1">—</b></div>
     <div style="height:5px;"></div>
     <div class="ctrl"><label>本体〜最初の穴までの距離</label><div class="cr"><input type="range" id="d1-off" min="0.5" max="10" value="5" step="0.5"><span id="vd1off">5.0 m</span></div></div>
     <div class="ctrl"><label>穴の数（1〜60個）</label><div class="cr"><input type="range" id="d1-n" min="1" max="60" value="20" step="1"><span id="vd1n">20 個</span></div></div>
-    <div class="ctrl"><label>穴径（50〜100 mm）</label><div class="cr"><input type="range" id="d1-d" min="50" max="100" value="100" step="5"><span id="vd1d">100 mm</span></div></div>
+    <div class="ctrl"><label>穴径（50〜150 mm）</label><div class="cr"><input type="range" id="d1-d" min="50" max="150" value="100" step="5"><span id="vd1d">100 mm</span></div></div>
     <div class="ctrl"><label>穴の間隔（ピッチ）</label><div class="cr"><input type="range" id="d1-p" min="200" max="2000" value="1350" step="50"><span id="vd1p">1350 mm</span></div></div>
   </div>
   <div class="panel">
     <div class="ptitle"><span class="badge b2">ダクト 2</span></div>
-    <div class="ctrl"><label>ダクト直径（300〜500 mm）</label><div class="cr"><input type="range" id="d2-dd" min="300" max="500" value="500" step="50"><span id="vd2dd">500 mm</span></div></div>
+    <div class="ctrl"><label>ダクト直径（300〜600 mm）</label><div class="cr"><input type="range" id="d2-dd" min="300" max="600" value="500" step="50"><span id="vd2dd">500 mm</span></div></div>
     <div class="dia-note">断面積：<b id="area-d2">—</b>　入口風速：<b id="inlet-d2">—</b></div>
     <div style="height:5px;"></div>
     <div class="ctrl"><label>本体〜最初の穴までの距離</label><div class="cr"><input type="range" id="d2-off" min="0.5" max="10" value="5" step="0.5"><span id="vd2off">5.0 m</span></div></div>
     <div class="ctrl"><label>穴の数（1〜60個）</label><div class="cr"><input type="range" id="d2-n" min="1" max="60" value="20" step="1"><span id="vd2n">20 個</span></div></div>
-    <div class="ctrl"><label>穴径（50〜100 mm）</label><div class="cr"><input type="range" id="d2-d" min="50" max="100" value="100" step="5"><span id="vd2d">100 mm</span></div></div>
+    <div class="ctrl"><label>穴径（50〜150 mm）</label><div class="cr"><input type="range" id="d2-d" min="50" max="150" value="100" step="5"><span id="vd2d">100 mm</span></div></div>
     <div class="ctrl"><label>穴の間隔（ピッチ）</label><div class="cr"><input type="range" id="d2-p" min="200" max="2000" value="1350" step="50"><span id="vd2p">1350 mm</span></div></div>
   </div>
 </div>
